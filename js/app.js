@@ -40,7 +40,12 @@ const App = {
   },
 
   fmt(amount) {
-    return this.currency() + amount.toFixed(2);
+    return this.currency() + amount.toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  },
+
+  /** Format with 4 decimals for unit costs (e.g. €0,0200/g) */
+  fmtUnit(amount) {
+    return this.currency() + amount.toLocaleString('el-GR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   },
 
   vatRate() {
@@ -777,7 +782,7 @@ const App = {
       } else {
         list.innerHTML = ingredients.map((ing, idx) => `
           <div class="ingredient-tag">
-            <span>${ing.name} ${ing.qty ? '<em class="ing-qty">(' + ing.qty + ')</em>' : ''} — ${App.currency()}${ing.cost.toFixed(2)} <small class="text-muted">(ex-VAT)</small></span>
+            <span>${ing.name} ${ing.qty ? '<em class="ing-qty">(' + ing.qty + ')</em>' : ''} — ${App.fmt(ing.cost)} <small class="text-muted">(ex-VAT)</small></span>
             <button class="ingredient-remove" data-idx="${idx}" title="Remove">&times;</button>
           </div>
         `).join('');
@@ -796,7 +801,7 @@ const App = {
       const costEl = modal.querySelector('#ingredient-total-cost');
       const marginEl = modal.querySelector('#ingredient-margin');
       const costInput = modal.querySelector('#modal-item-cost');
-      if (costEl) costEl.textContent = App.currency() + totalCost.toFixed(2);
+      if (costEl) costEl.textContent = App.fmt(totalCost);
       if (costInput) costInput.value = totalCost.toFixed(2);
       const price = parseFloat(modal.querySelector('#modal-item-price')?.value) || 0;
       const vatPct = App.vatRate();
@@ -810,16 +815,16 @@ const App = {
       const vatEl = modal.querySelector('#vat-amount');
       const profitEl = modal.querySelector('#vat-profit');
       const suggestedEl = modal.querySelector('#vat-suggested');
-      if (netEl) netEl.textContent = App.currency() + net.toFixed(2);
-      if (vatEl) vatEl.textContent = App.currency() + vatAmount.toFixed(2);
+      if (netEl) netEl.textContent = App.fmt(net);
+      if (vatEl) vatEl.textContent = App.fmt(vatAmount);
       if (profitEl) {
-        profitEl.textContent = App.currency() + profit.toFixed(2);
+        profitEl.textContent = App.fmt(profit);
         profitEl.className = profit >= 0 ? 'profit-positive' : 'profit-negative';
       }
       // Suggested price: target 30% food cost (70% margin) → sell at cost/0.30 * (1 + vat/100)
       if (suggestedEl) {
         const suggested = totalCost > 0 ? (totalCost / 0.30) * (1 + vatPct / 100) : 0;
-        suggestedEl.textContent = App.currency() + suggested.toFixed(2);
+        suggestedEl.textContent = App.fmt(suggested);
       }
       if (marginEl) {
         marginEl.textContent = margin.toFixed(1) + '%';
@@ -923,7 +928,7 @@ const App = {
         const uc = p.recipeUnitsPerPack > 0 ? p.packCost / p.recipeUnitsPerPack : 0;
         return `<div class="ac-option" data-id="${p.id}">
           <span class="ac-name">${p.name}</span>
-          <span class="ac-detail">${App.currency()}${uc.toFixed(4)} / ${p.recipeUnit}</span>
+          <span class="ac-detail">${App.fmtUnit(uc)} / ${p.recipeUnit}</span>
         </div>`;
       }).join('');
       acContainer.classList.remove('hidden');
@@ -1126,7 +1131,7 @@ const App = {
               <td class="text-center">${this.fmt(p.packCost)}</td>
               <td class="text-center">${p.recipeUnit}</td>
               <td class="text-center">${p.recipeUnitsPerPack}</td>
-              <td class="text-center pantry-unit-cost">${this.currency()}${unitCost.toFixed(4)}/${p.recipeUnit}</td>
+              <td class="text-center pantry-unit-cost">${this.fmtUnit(unitCost)}/${p.recipeUnit}</td>
               <td class="text-center">
                 <button class="btn-icon btn-edit-pantry" data-id="${p.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon btn-delete-pantry" data-id="${p.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
@@ -1188,7 +1193,7 @@ const App = {
       const recipeUnit = modal.querySelector('#pantry-recipe-unit')?.value || '';
       if (el) {
         const uc = unitsPerPack > 0 ? packCost / unitsPerPack : 0;
-        el.textContent = App.currency() + uc.toFixed(4) + (recipeUnit ? ' / ' + recipeUnit : '');
+        el.textContent = App.fmtUnit(uc) + (recipeUnit ? ' / ' + recipeUnit : '');
       }
     }
 
