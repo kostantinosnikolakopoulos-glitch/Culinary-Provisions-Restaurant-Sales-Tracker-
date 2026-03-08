@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Culinary Provisions — Restaurant Sales Tracker</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <h1><i class="fa-solid fa-utensils"></i> Culinary Provisions</h1>
+      <div class="brand-sub">Restaurant Sales Tracker</div>
+      <span id="restaurant-name">My Restaurant</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <a data-view="dashboard" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+
+      <div class="nav-section">Operations</div>
+      <a data-view="new-order"><i class="fa-solid fa-plus-circle"></i> New Order</a>
+      <a data-view="orders"><i class="fa-solid fa-receipt"></i> Today's Orders</a>
+
+      <div class="nav-section">Management</div>
+      <a data-view="menu"><i class="fa-solid fa-book-open"></i> Menu</a>
+      <a data-view="pantry"><i class="fa-solid fa-warehouse"></i> Pantry</a>
+      <a data-view="staff"><i class="fa-solid fa-users"></i> Staff</a>
+
+      <div class="nav-section">Analytics</div>
+      <a data-view="reports"><i class="fa-solid fa-chart-bar"></i> Reports</a>
+      <a data-view="history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+
+      <div class="nav-section">System</div>
+      <a data-view="settings"><i class="fa-solid fa-gear"></i> Settings</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      &copy; 2026 Culinary Provisions
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ══════════════════════════════════════ -->
+  <div class="main-content">
+
+    <!-- Header -->
+    <header class="main-header">
+      <div class="header-left">
+        <button class="hamburger" id="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <span id="header-date"></span>
+      </div>
+      <div class="header-right">
+        <button class="btn-end-day" onclick="App.endOfDay()">
+          <i class="fa-solid fa-moon"></i> End of Day
+        </button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <main class="main-body">
+
+      <!-- ─── DASHBOARD ─────────────────────────────────── -->
+      <section class="view-section" id="view-dashboard">
+        <h2 class="view-title"><i class="fa-solid fa-chart-pie"></i> Dashboard <span class="dash-date" id="dash-date"></span></h2>
+
+        <div class="kpi-row">
+          <div class="kpi-card kpi-highlight">
+            <span class="kpi-value" id="kpi-revenue">€0.00</span>
+            <span class="kpi-label">Revenue Today</span>
+          </div>
+          <div class="kpi-card kpi-profit">
+            <span class="kpi-value" id="kpi-cost">€0.00</span>
+            <span class="kpi-label">Cost of Goods <small>(ex-VAT)</small></span>
+          </div>
+          <div class="kpi-card kpi-gross">
+            <span class="kpi-value" id="kpi-gross-profit">€0.00</span>
+            <span class="kpi-label">Net Profit <small>(ex-VAT)</small></span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value" id="kpi-margin">0%</span>
+            <span class="kpi-label">Real Margin <small>(ex-VAT)</small></span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value" id="kpi-orders">0</span>
+            <span class="kpi-label">Closed Orders</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value" id="kpi-covers">0</span>
+            <span class="kpi-label">Covers</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value" id="kpi-avg">€0.00</span>
+            <span class="kpi-label">Avg / Cover</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value" id="kpi-items">0</span>
+            <span class="kpi-label">Items Sold</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value" id="kpi-open">0</span>
+            <span class="kpi-label">Open Orders</span>
+          </div>
+        </div>
+
+        <!-- Star Performer -->
+        <div id="star-performer" style="margin-bottom: 1rem;"></div>
+
+        <div class="dashboard-grid">
+          <div class="dash-card">
+            <h4><i class="fa-solid fa-chart-pie"></i> Revenue by Category</h4>
+            <div class="chart-container"><canvas id="chart-categories"></canvas></div>
+          </div>
+          <div class="dash-card">
+            <h4><i class="fa-solid fa-ranking-star"></i> Top Selling Items</h4>
+            <div class="chart-container"><canvas id="chart-top-items"></canvas></div>
+          </div>
+          <div class="dash-card">
+            <h4><i class="fa-solid fa-users"></i> Server Performance</h4>
+            <table>
+              <thead><tr><th>Server</th><th class="text-center">Orders</th><th class="text-center">Items</th><th class="text-right">Revenue</th></tr></thead>
+              <tbody id="staff-dashboard-body">
+                <tr><td colspan="4" class="text-muted text-center">No sales today</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="dash-card">
+            <h4><i class="fa-solid fa-layer-group"></i> Category Breakdown</h4>
+            <table>
+              <thead><tr><th>Category</th><th class="text-center">Items</th><th class="text-right">Revenue</th></tr></thead>
+              <tbody id="category-breakdown-body">
+                <tr><td colspan="3" class="text-muted text-center">No sales yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── NEW ORDER ─────────────────────────────────── -->
+      <section class="view-section hidden" id="view-new-order">
+        <h2 class="view-title"><i class="fa-solid fa-plus-circle"></i> New Order</h2>
+
+        <div id="new-order-content">
+          <div class="order-layout">
+            <!-- Left: Menu -->
+            <div class="order-left">
+              <div class="order-meta">
+                <div class="form-group">
+                  <label>Server</label>
+                  <select id="order-staff"></select>
+                </div>
+                <div class="form-group">
+                  <label>Table #</label>
+                  <input type="number" id="order-table" min="1" max="100" value="1" />
+                </div>
+                <div class="form-group">
+                  <label>Covers</label>
+                  <input type="number" id="order-covers" min="1" max="20" value="2" />
+                </div>
+              </div>
+
+              <div id="category-tabs"></div>
+              <div id="menu-grid"></div>
+            </div>
+
+            <!-- Right: Order Summary -->
+            <div class="order-right">
+              <div class="order-panel-header">
+                <i class="fa-solid fa-clipboard-list"></i> Current Order
+              </div>
+              <div id="order-summary">
+                <p class="text-muted text-center">No items added yet</p>
+              </div>
+              <div class="order-panel-footer">
+                <div class="order-total-row">
+                  <span>Total</span>
+                  <span id="order-total">€0.00</span>
+                </div>
+                <div class="order-panel-actions">
+                  <button class="btn btn-outline btn-sm" onclick="App.clearOrder()">
+                    <i class="fa-solid fa-trash"></i> Clear
+                  </button>
+                  <button class="btn btn-primary" onclick="App.submitOrder()">
+                    <i class="fa-solid fa-paper-plane"></i> Send to Kitchen
+                  </button>
+                  <button class="btn btn-success" onclick="App.submitAndCloseOrder()">
+                    <i class="fa-solid fa-check"></i> Submit & Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── TODAY'S ORDERS ────────────────────────────── -->
+      <section class="view-section hidden" id="view-orders">
+        <h2 class="view-title"><i class="fa-solid fa-receipt"></i> Today's Orders</h2>
+        <div id="orders-list"></div>
+      </section>
+
+      <!-- ─── MENU MANAGEMENT ──────────────────────────── -->
+      <section class="view-section hidden" id="view-menu">
+        <h2 class="view-title"><i class="fa-solid fa-book-open"></i> Menu Management</h2>
+        <div id="menu-management"></div>
+      </section>
+
+      <!-- ─── PANTRY (Ingredient Inventory) ────────────── -->
+      <section class="view-section hidden" id="view-pantry">
+        <h2 class="view-title"><i class="fa-solid fa-warehouse"></i> Pantry — Ingredient Inventory</h2>
+        <div id="pantry-management"></div>
+      </section>
+
+      <!-- ─── STAFF MANAGEMENT ─────────────────────────── -->
+      <section class="view-section hidden" id="view-staff">
+        <h2 class="view-title"><i class="fa-solid fa-users"></i> Staff Management</h2>
+        <div id="staff-management"></div>
+      </section>
+
+      <!-- ─── REPORTS ───────────────────────────────────── -->
+      <section class="view-section hidden" id="view-reports">
+        <h2 class="view-title"><i class="fa-solid fa-chart-bar"></i> Daily Reports</h2>
+        <div class="report-controls">
+          <div class="form-group">
+            <label>Select Date</label>
+            <input type="date" id="report-date" />
+          </div>
+        </div>
+        <div id="reports-content"></div>
+      </section>
+
+      <!-- ─── HISTORY ───────────────────────────────────── -->
+      <section class="view-section hidden" id="view-history">
+        <h2 class="view-title"><i class="fa-solid fa-clock-rotate-left"></i> History &amp; Summaries</h2>
+        <div class="history-tabs">
+          <button class="tab-btn active" data-htab="daily">Daily History</button>
+          <button class="tab-btn" data-htab="weekly">Weekly Summaries</button>
+          <button class="tab-btn" data-htab="monthly">Monthly Reports</button>
+        </div>
+        <div id="history-content"></div>
+      </section>
+
+      <!-- ─── SETTINGS ──────────────────────────────────── -->
+      <section class="view-section hidden" id="view-settings">
+        <h2 class="view-title"><i class="fa-solid fa-gear"></i> Settings</h2>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h4><i class="fa-solid fa-store"></i> Restaurant</h4>
+            <div class="form-group">
+              <label>Restaurant Name</label>
+              <input type="text" id="setting-name" placeholder="My Restaurant" />
+            </div>
+            <div class="form-group">
+              <label>Currency Symbol</label>
+              <input type="text" id="setting-currency" placeholder="€" maxlength="3" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tax Rate (%)</label>
+                <input type="number" id="setting-tax" min="0" max="100" step="0.5" placeholder="0" />
+              </div>
+              <div class="form-group">
+                <label>Service Charge (%)</label>
+                <input type="number" id="setting-service" min="0" max="100" step="0.5" placeholder="0" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>VAT Rate (%)</label>
+                <input type="number" id="setting-vat" min="0" max="100" step="0.5" placeholder="13" />
+              </div>
+              <div class="form-group" style="display:flex;align-items:flex-end;">
+                <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 .4rem;">Applied to selling prices to calculate net revenue &amp; real profit margins.</p>
+              </div>
+            </div>
+            <div class="settings-actions">
+              <button class="btn btn-primary" onclick="App.saveSettings()">
+                <i class="fa-solid fa-save"></i> Save Settings
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h4><i class="fa-solid fa-database"></i> Data Management</h4>
+            <p style="font-size: .85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Export your data for backup or import from a previous backup. All data is stored locally in your browser.
+            </p>
+            <div class="settings-actions">
+              <button class="btn btn-outline" onclick="App.exportData()">
+                <i class="fa-solid fa-download"></i> Export Data
+              </button>
+              <button class="btn btn-outline" onclick="App.importData()">
+                <i class="fa-solid fa-upload"></i> Import Data
+              </button>
+            </div>
+            <hr style="border-color: var(--border); margin: 1rem 0;" />
+            <p style="font-size: .82rem; color: var(--danger); margin-bottom: .5rem;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Danger Zone
+            </p>
+            <div class="settings-actions">
+              <button class="btn btn-danger-outline" onclick="App.resetAllData()">
+                <i class="fa-solid fa-trash"></i> Reset All Data
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h4><i class="fa-solid fa-flask"></i> Demo &amp; Defaults</h4>
+            <p style="font-size: .85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Generate a simulated busy day (~€10,000 revenue across 7 servers) or reset menu &amp; staff to defaults.
+            </p>
+            <div class="settings-actions">
+              <button class="btn btn-primary" onclick="App.loadDemoData()">
+                <i class="fa-solid fa-play"></i> Generate Demo Day
+              </button>
+              <button class="btn btn-outline" onclick="App.resetToDefaults()">
+                <i class="fa-solid fa-rotate-left"></i> Reset Menu &amp; Staff
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal Container -->
+<div id="modal" class="hidden"></div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- App Scripts (order matters) -->
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
