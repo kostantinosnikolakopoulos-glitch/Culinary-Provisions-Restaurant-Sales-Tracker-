@@ -13,6 +13,7 @@ const App = {
   init() {
     Store.init();
     this.bindNav();
+    this.bindMobile();
     this.showView('dashboard');
     this.updateClock();
     setInterval(() => this.updateClock(), 30000);
@@ -75,8 +76,63 @@ const App = {
     });
   },
 
+  // ── Mobile sidebar / overlay ───────────────────────────
+  bindMobile() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const hamburger = document.getElementById('hamburger');
+
+    // Hamburger toggles sidebar + overlay
+    if (hamburger) {
+      hamburger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = sidebar.classList.toggle('open');
+        overlay.classList.toggle('active', open);
+      });
+    }
+
+    // Tap overlay to close
+    if (overlay) {
+      overlay.addEventListener('click', () => this.closeSidebar());
+    }
+
+    // Swipe-to-close on sidebar
+    let touchStartX = 0;
+    sidebar.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    sidebar.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (dx < -60) this.closeSidebar();   // swipe left to close
+    }, { passive: true });
+
+    // Swipe from left edge to open sidebar
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches[0].clientX < 20 && !sidebar.classList.contains('open')) {
+        touchStartX = 0;
+        sidebar._edgeSwipe = true;
+      }
+    }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (sidebar._edgeSwipe && e.changedTouches[0].clientX > 80) {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+      }
+      sidebar._edgeSwipe = false;
+    }, { passive: true });
+  },
+
+  closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  },
+
   showView(view) {
     this.currentView = view;
+    // Close sidebar on mobile
+    this.closeSidebar();
     // Update nav
     document.querySelectorAll('[data-view]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === view);
@@ -86,6 +142,8 @@ const App = {
     // Show target
     const target = document.getElementById('view-' + view);
     if (target) target.classList.remove('hidden');
+    // Scroll to top
+    document.querySelector('.main-body')?.scrollTo(0, 0);
     // Render
     this.renderView(view);
   },

@@ -1593,27 +1593,234 @@ input:focus, select:focus {
   .star-card { border-color: #ccc; }
 }
 
+/* ── Sidebar overlay (mobile backdrop) ────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
 /* ── Responsive ───────────────────────────────────────────── */
+
+/* ─── Tablet (≤ 1024px) ────────────────────────────────── */
 @media (max-width: 1024px) {
   .dashboard-grid { grid-template-columns: 1fr; }
   .report-charts-row { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
   .order-layout { grid-template-columns: 1fr; height: auto; }
-  .order-right { max-height: 400px; }
+  .order-right { max-height: 420px; }
+  .kpi-row { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
 }
 
+/* ─── Mobile (≤ 768px) ─────────────────────────────────── */
 @media (max-width: 768px) {
-  :root { --sidebar-w: 0px; }
+  :root {
+    --sidebar-w: 0px;
+    --header-h: 52px;
+  }
+  html { font-size: 14px; }
+
+  /* Sidebar: slide-in drawer */
   .sidebar {
     transform: translateX(-100%);
-    width: 250px;
+    width: 270px;
+    box-shadow: 4px 0 24px rgba(0,0,0,.5);
   }
   .sidebar.open { transform: translateX(0); }
-  .hamburger { display: block; }
+  .hamburger { display: flex; }
   .main-content { margin-left: 0; }
-  #menu-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+
+  /* Header */
+  .main-header { padding: 0 .8rem; }
+  .btn-end-day { padding: .4rem .7rem; font-size: .78rem; }
+  .btn-end-day span.end-day-text { display: none; } /* hide text, icon only optional */
+
+  /* Main body */
+  .main-body { padding: 1rem .75rem; }
+
+  /* View title */
+  .view-title { font-size: 1.1rem; margin-bottom: 1rem; }
+
+  /* KPI cards */
+  .kpi-row { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .kpi-card { padding: .75rem .6rem; }
+  .kpi-card .kpi-value { font-size: 1.25rem; }
+  .kpi-card .kpi-label { font-size: .68rem; }
+
+  /* Dashboard */
+  .dashboard-grid { grid-template-columns: 1fr; gap: .8rem; }
+  .dash-card { padding: 1rem; }
+  .chart-container { height: 180px; }
+
+  /* Star performer */
+  .star-card { flex-direction: column; text-align: center; gap: .6rem; padding: .8rem; }
+  .star-card i.fa-trophy { font-size: 1.6rem; }
+
+  /* Tables — horizontal scroll */
+  .menu-items-table,
+  .report-table,
+  .pantry-table-wrap,
+  .history-list table,
+  .history-detail table,
+  .history-details table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .menu-items-table table,
+  .report-table table,
+  .pantry-table table,
+  .history-list table,
+  .history-detail table,
+  .history-details table {
+    min-width: 520px;
+  }
+  table th, table td { padding: .45rem .5rem; font-size: .8rem; white-space: nowrap; }
+
+  /* New Order layout */
+  .order-layout { grid-template-columns: 1fr; height: auto; gap: .8rem; }
+  .order-meta { flex-direction: column; gap: .5rem; }
+  .order-meta .form-group { min-width: 100%; }
+  #menu-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .5rem; }
+  .menu-card { padding: .6rem; }
+  .menu-card-name { font-size: .8rem; }
+  .order-right { max-height: 360px; }
+  .order-panel-header { padding: .7rem .8rem; font-size: .9rem; }
+  #order-summary { padding: .4rem .7rem; }
+  .order-panel-footer { padding: .6rem .8rem; }
+  .order-panel-actions { flex-direction: column; }
+  .order-panel-actions .btn { justify-content: center; padding: .55rem .8rem; }
+  .order-total-row { font-size: 1rem; }
+  #category-tabs { gap: .3rem; }
+  .tab-btn { padding: .4rem .6rem; font-size: .75rem; }
+
+  /* Order cards */
   .orders-grid { grid-template-columns: 1fr; }
+
+  /* Staff */
   .staff-grid { grid-template-columns: 1fr; }
-  .kpi-row { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
-  .report-kpis { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+  .staff-card { padding: .8rem; }
+
+  /* Reports */
+  .report-kpis { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+  .report-kpi { padding: .6rem; }
+  .report-kpi-value { font-size: 1.1rem; }
+  .report-charts-row { grid-template-columns: 1fr; }
+  .report-controls { flex-direction: column; align-items: stretch; }
+  .report-controls .form-group { min-width: 100%; }
+
+  /* Settings */
+  .settings-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .settings-card { padding: 1rem; }
+  .form-row { flex-direction: column; gap: .6rem; }
+
+  /* History */
+  .history-tabs { gap: .3rem; }
+  .history-tabs .tab-btn { padding: .5rem .7rem; font-size: .82rem; flex: 1; justify-content: center; text-align: center; }
+  .history-week-header, .history-month-header { flex-direction: column; gap: .5rem; align-items: flex-start; padding: .8rem 1rem; }
+  .history-week-card .kpi-row, .history-month-card .kpi-row { padding: .8rem; }
+  .history-details { padding: 0 .8rem; }
+
+  /* Modal — full-width on mobile */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-box {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 1.2rem;
+    animation: modalSlideUp .3s ease;
+  }
+  @keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; justify-content: center; padding: .6rem; }
+
+  /* Buttons — larger touch targets */
+  .btn { padding: .55rem 1rem; font-size: .85rem; min-height: 42px; }
+  .btn-sm { padding: .4rem .65rem; min-height: 36px; }
+  .btn-icon { padding: .5rem; font-size: 1rem; min-width: 36px; min-height: 36px; }
+  .qty-btn { width: 32px; height: 32px; font-size: 1.1rem; }
+
+  /* Forms — better mobile sizing */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select { padding: .6rem .75rem; font-size: .9rem; min-height: 42px; }
+
+  /* Pantry */
+  .pantry-header { flex-direction: column; align-items: stretch; }
+  .pantry-search-box { max-width: 100%; }
+
+  /* Menu mgmt */
+  .menu-mgmt-header { flex-direction: column; align-items: stretch; gap: .5rem; }
+
+  /* Toasts — full width on mobile */
+  #toast-container { left: .5rem; right: .5rem; top: auto; bottom: .5rem; }
+  .toast { max-width: 100%; }
+
+  /* Ingredient autocomplete */
+  .ing-autocomplete { max-height: 160px; }
+  .ingredient-input-row { flex-wrap: wrap; }
+  .ingredient-input-row input:last-of-type { max-width: 100%; flex: 1; }
+}
+
+/* ─── Small phones (≤ 480px) ───────────────────────────── */
+@media (max-width: 480px) {
+  html { font-size: 13.5px; }
+  .main-body { padding: .75rem .5rem; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); gap: .45rem; }
+  .kpi-card .kpi-value { font-size: 1.1rem; }
+  .kpi-card { padding: .6rem .5rem; }
+  #menu-grid { grid-template-columns: repeat(2, 1fr); }
+  .report-kpis { grid-template-columns: repeat(2, 1fr); }
+  .sidebar { width: 85vw; max-width: 280px; }
+  .order-right { max-height: 320px; }
+  .view-title { font-size: 1rem; }
+  .chart-container { height: 160px; }
+  .history-tabs .tab-btn { font-size: .76rem; padding: .45rem .5rem; }
+}
+
+/* ─── iOS safe areas ───────────────────────────────────── */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .main-header {
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--header-h) + env(safe-area-inset-top));
+  }
+  .sidebar { padding-top: env(safe-area-inset-top); }
+  .main-body { padding-bottom: env(safe-area-inset-bottom); }
+  .modal-box { padding-bottom: calc(1.2rem + env(safe-area-inset-bottom)); }
+  #toast-container { bottom: calc(.5rem + env(safe-area-inset-bottom)); }
+}
+
+/* ─── Touch device optimizations ───────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover lifts on touch (they stick on tap) */
+  .kpi-card:hover,
+  .dash-card:hover,
+  .order-card:hover,
+  .staff-card:hover,
+  .settings-card:hover,
+  .report-kpi:hover { transform: none; box-shadow: none; }
+
+  /* Active states for touch feedback */
+  .kpi-card:active,
+  .dash-card:active { transform: scale(.98); }
+  .sidebar-nav a:active { background: var(--accent-light); }
+  .menu-card:active { transform: scale(.97); }
+  .btn:active { transform: scale(.97); opacity: .9; }
+  .tab-btn:active { transform: scale(.97); }
+  .qty-btn:active { transform: scale(.9); }
 }
