@@ -262,7 +262,7 @@ const App = {
 
     // Category chart
     const catLabels = [], catData = [], catColors = [];
-    const palette = ['#c9a84c','#059669','#d97706','#3b82f6','#8b5cf6','#0891b2','#be185d','#65a30d'];
+    const palette = ['#b08d4e','#2d9c6f','#e0892e','#4a8fe7','#9064db','#1ba9c4','#d14d7a','#7cb531','#e86c5a','#6c8ebf'];
     Object.keys(catMap).forEach((id, i) => {
       if (catMap[id].revenue > 0) {
         catLabels.push(catMap[id].name);
@@ -270,13 +270,50 @@ const App = {
         catColors.push(palette[i % palette.length]);
       }
     });
+    const cc = this.chartColors();
+    const catTotal = catData.reduce((a, b) => a + b, 0);
 
     this.renderChart('chart-categories', 'doughnut', {
       labels: catLabels,
-      datasets: [{ data: catData, backgroundColor: catColors, borderWidth: 2, borderColor: this.chartColors().border }]
+      datasets: [{
+        data: catData,
+        backgroundColor: catColors,
+        hoverBackgroundColor: catColors.map(c => c + 'dd'),
+        borderWidth: 2,
+        borderColor: cc.border,
+        hoverOffset: 8,
+        spacing: 2,
+        borderRadius: 3,
+      }]
     }, {
-      plugins: { legend: { position: 'bottom', labels: { color: this.chartColors().text, padding: 12, font: { size: 11 } } } },
-      cutout: '55%',
+      cutout: '62%',
+      animation: { animateRotate: true, duration: 900, easing: 'easeOutQuart' },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: cc.text,
+            padding: 14,
+            font: { size: 11, weight: '500' },
+            usePointStyle: true,
+            pointStyleWidth: 10,
+          },
+        },
+        tooltip: {
+          backgroundColor: cc.border === '#ffffff' ? '#1a1207ee' : '#0f1923ee',
+          titleFont: { size: 13, weight: '600' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label(ctx) {
+              const val = ctx.parsed;
+              const pct = catTotal > 0 ? (val / catTotal * 100).toFixed(1) : '0.0';
+              return ` ${App.fmt(val)}  (${pct}%)`;
+            },
+          },
+        },
+      },
     });
 
     // Staff breakdown
@@ -341,20 +378,34 @@ const App = {
     });
     const topItems = Object.values(itemSales).sort((a, b) => b.qty - a.qty).slice(0, 8);
 
+    const bcc = this.chartColors();
     this.renderChart('chart-top-items', 'bar', {
       labels: topItems.map(i => i.name.length > 18 ? i.name.slice(0, 16) + '…' : i.name),
       datasets: [{
         label: 'Qty Sold',
         data: topItems.map(i => i.qty),
-        backgroundColor: '#c9a84c',
+        backgroundColor: '#b08d4e',
+        hoverBackgroundColor: '#c9a84c',
         borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.7,
       }]
     }, {
       indexAxis: 'y',
-      plugins: { legend: { display: false } },
+      animation: { duration: 700, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: bcc.border === '#ffffff' ? '#1a1207ee' : '#0f1923ee',
+          titleFont: { size: 13, weight: '600' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+        },
+      },
       scales: {
-        x: { ticks: { color: this.chartColors().text }, grid: { color: this.chartColors().grid } },
-        y: { ticks: { color: this.chartColors().text, font: { size: 11 } }, grid: { display: false } },
+        x: { ticks: { color: bcc.text }, grid: { color: bcc.grid, drawBorder: false } },
+        y: { ticks: { color: bcc.text, font: { size: 11 } }, grid: { display: false } },
       }
     });
 
@@ -1721,17 +1772,57 @@ const App = {
 
     // Render charts
     const catLabels = [], catData2 = [], catColors2 = [];
-    const palette = ['#c9a84c','#059669','#d97706','#3b82f6','#8b5cf6','#0891b2','#be185d','#65a30d'];
+    const palette = ['#b08d4e','#2d9c6f','#e0892e','#4a8fe7','#9064db','#1ba9c4','#d14d7a','#7cb531','#e86c5a','#6c8ebf'];
     Object.values(catMap).filter(c => c.revenue > 0).forEach((c, i) => {
       catLabels.push(c.name);
       catData2.push(c.revenue);
       catColors2.push(palette[i % palette.length]);
     });
+    const rcc = this.chartColors();
+    const rCatTotal = catData2.reduce((a, b) => a + b, 0);
 
     this.renderChart('report-chart-cat', 'doughnut', {
       labels: catLabels,
-      datasets: [{ data: catData2, backgroundColor: catColors2, borderWidth: 2, borderColor: this.chartColors().border }]
-    }, { plugins: { legend: { position: 'bottom', labels: { color: this.chartColors().text, padding: 10, font: { size: 11 } } } }, cutout: '50%' });
+      datasets: [{
+        data: catData2,
+        backgroundColor: catColors2,
+        hoverBackgroundColor: catColors2.map(c => c + 'dd'),
+        borderWidth: 2,
+        borderColor: rcc.border,
+        hoverOffset: 8,
+        spacing: 2,
+        borderRadius: 3,
+      }]
+    }, {
+      cutout: '62%',
+      animation: { animateRotate: true, duration: 900, easing: 'easeOutQuart' },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: rcc.text,
+            padding: 14,
+            font: { size: 11, weight: '500' },
+            usePointStyle: true,
+            pointStyleWidth: 10,
+          },
+        },
+        tooltip: {
+          backgroundColor: rcc.border === '#ffffff' ? '#1a1207ee' : '#0f1923ee',
+          titleFont: { size: 13, weight: '600' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label(ctx) {
+              const val = ctx.parsed;
+              const pct = rCatTotal > 0 ? (val / rCatTotal * 100).toFixed(1) : '0.0';
+              return ` ${App.fmt(val)}  (${pct}%)`;
+            },
+          },
+        },
+      },
+    });
 
     // Hourly chart
     const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6am to midnight
@@ -1740,14 +1831,28 @@ const App = {
       datasets: [{
         label: 'Revenue',
         data: hours.map(h => hourlyData[h]?.revenue || 0),
-        backgroundColor: '#c9a84c',
-        borderRadius: 4,
+        backgroundColor: '#b08d4e',
+        hoverBackgroundColor: '#c9a84c',
+        borderRadius: 5,
+        borderSkipped: false,
+        barPercentage: 0.65,
       }]
     }, {
-      plugins: { legend: { display: false } },
+      animation: { duration: 700, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: rcc.border === '#ffffff' ? '#1a1207ee' : '#0f1923ee',
+          titleFont: { size: 13, weight: '600' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: { label(ctx) { return ` ${App.fmt(ctx.parsed.y)}`; } },
+        },
+      },
       scales: {
-        x: { ticks: { color: this.chartColors().text }, grid: { color: this.chartColors().grid } },
-        y: { ticks: { color: this.chartColors().text, callback: v => App.fmt(v) }, grid: { color: this.chartColors().grid } },
+        x: { ticks: { color: rcc.text, maxRotation: 45 }, grid: { color: rcc.grid, drawBorder: false } },
+        y: { ticks: { color: rcc.text, callback: v => App.fmt(v) }, grid: { color: rcc.grid, drawBorder: false } },
       }
     });
 
