@@ -13,9 +13,9 @@
   --bg-card:    #ffffff;
   --bg-hover:   #f0ece4;
   --border:     #e2ddd3;
-  --text:       #2c2417;
-  --text-muted: #7a7062;
-  --text-dim:   #a89f90;
+  --text:       #1a1207;
+  --text-muted: #5a5044;
+  --text-dim:   #7a7062;
   --accent:     #b08d4e;
   --accent-hover: #9a7a3d;
   --accent-light: rgba(176,141,78,.10);
@@ -1237,7 +1237,7 @@ input:focus, select:focus {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-card);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 0.92rem;
   transition: all 0.2s ease;
@@ -1245,7 +1245,7 @@ input:focus, select:focus {
 
 .history-tabs .tab-btn:hover {
   border-color: var(--accent);
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .history-tabs .tab-btn.active {
@@ -1289,7 +1289,7 @@ input:focus, select:focus {
 }
 
 .history-list table td {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .history-list table tr:last-child td {
@@ -1378,7 +1378,7 @@ input:focus, select:focus {
 }
 
 .history-details details summary:hover {
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .history-details details > div {
@@ -1408,7 +1408,7 @@ input:focus, select:focus {
 }
 
 .history-details table td {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .history-details table tr:last-child td {
@@ -1461,7 +1461,7 @@ input:focus, select:focus {
 }
 
 .history-detail table td {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .history-detail table tr:last-child td {
@@ -1567,7 +1567,7 @@ input:focus, select:focus {
   padding: 8px 14px;
   border-bottom: 1px solid var(--border);
   font-size: 0.86rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .pantry-table tbody tr:hover {
@@ -1586,7 +1586,7 @@ input:focus, select:focus {
 
 .pantry-item-name {
   font-weight: 500;
-  color: var(--text-primary) !important;
+  color: var(--text) !important;
 }
 
 .pantry-unit-cost {
@@ -1602,7 +1602,7 @@ input:focus, select:focus {
   padding: 10px 14px;
   margin-top: 0.75rem;
   font-size: 0.88rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .pantry-unit-cost-display strong {
@@ -1640,7 +1640,7 @@ input:focus, select:focus {
 }
 
 .ac-name {
-  color: var(--text-primary);
+  color: var(--text);
   font-weight: 500;
 }
 
