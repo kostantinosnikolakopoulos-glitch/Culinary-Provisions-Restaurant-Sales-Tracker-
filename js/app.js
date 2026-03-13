@@ -69,6 +69,16 @@ const App = {
     return vat > 0 ? netAmount * (1 + vat / 100) : netAmount;
   },
 
+  /** Theme-aware chart colors */
+  chartColors() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      text:  dark ? '#e8ecf1' : '#2c2417',
+      grid:  dark ? '#2a3a4a' : '#e2ddd3',
+      border: dark ? '#15202d' : '#ffffff',
+    };
+  },
+
   // ── Navigation ─────────────────────────────────────────
   bindNav() {
     document.querySelectorAll('[data-view]').forEach(btn => {
@@ -263,9 +273,9 @@ const App = {
 
     this.renderChart('chart-categories', 'doughnut', {
       labels: catLabels,
-      datasets: [{ data: catData, backgroundColor: catColors, borderWidth: 2, borderColor: '#0f1923' }]
+      datasets: [{ data: catData, backgroundColor: catColors, borderWidth: 2, borderColor: this.chartColors().border }]
     }, {
-      plugins: { legend: { position: 'bottom', labels: { color: '#e8ecf1', padding: 12, font: { size: 11 } } } },
+      plugins: { legend: { position: 'bottom', labels: { color: this.chartColors().text, padding: 12, font: { size: 11 } } } },
       cutout: '55%',
     });
 
@@ -343,8 +353,8 @@ const App = {
       indexAxis: 'y',
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: '#e8ecf1' }, grid: { color: '#2a3a4a' } },
-        y: { ticks: { color: '#e8ecf1', font: { size: 11 } }, grid: { display: false } },
+        x: { ticks: { color: this.chartColors().text }, grid: { color: this.chartColors().grid } },
+        y: { ticks: { color: this.chartColors().text, font: { size: 11 } }, grid: { display: false } },
       }
     });
 
@@ -1720,8 +1730,8 @@ const App = {
 
     this.renderChart('report-chart-cat', 'doughnut', {
       labels: catLabels,
-      datasets: [{ data: catData2, backgroundColor: catColors2, borderWidth: 2, borderColor: '#0f1923' }]
-    }, { plugins: { legend: { position: 'bottom', labels: { color: '#e8ecf1', padding: 10, font: { size: 11 } } } }, cutout: '50%' });
+      datasets: [{ data: catData2, backgroundColor: catColors2, borderWidth: 2, borderColor: this.chartColors().border }]
+    }, { plugins: { legend: { position: 'bottom', labels: { color: this.chartColors().text, padding: 10, font: { size: 11 } } } }, cutout: '50%' });
 
     // Hourly chart
     const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6am to midnight
@@ -1736,8 +1746,8 @@ const App = {
     }, {
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: '#e8ecf1' }, grid: { color: '#2a3a4a' } },
-        y: { ticks: { color: '#e8ecf1', callback: v => App.fmt(v) }, grid: { color: '#2a3a4a' } },
+        x: { ticks: { color: this.chartColors().text }, grid: { color: this.chartColors().grid } },
+        y: { ticks: { color: this.chartColors().text, callback: v => App.fmt(v) }, grid: { color: this.chartColors().grid } },
       }
     });
 
