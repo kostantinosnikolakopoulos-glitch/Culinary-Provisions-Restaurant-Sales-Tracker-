@@ -12,9 +12,12 @@ const App = {
   // ── Initialise ─────────────────────────────────────────
   init() {
     Store.init();
+    this.applyTheme();
     this.bindNav();
     this.bindMobile();
-    this.showView('dashboard');
+    // Restore last viewed page (persist across refresh)
+    const saved = localStorage.getItem('hc_current_view');
+    this.showView(saved || 'dashboard');
     this.updateClock();
     setInterval(() => this.updateClock(), 30000);
     this.updateRestaurantName();
@@ -129,8 +132,38 @@ const App = {
     overlay.classList.remove('active');
   },
 
+  // ── Theme (light / dark) ──────────────────────────────
+  applyTheme() {
+    const saved = localStorage.getItem('hc_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    this.updateThemeIcon(saved);
+  },
+
+  toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('hc_theme', next);
+    this.updateThemeIcon(next);
+    // Update meta theme-color for mobile browser chrome
+    const meta = document.getElementById('meta-theme-color');
+    if (meta) meta.content = next === 'dark' ? '#0f1923' : '#f5f3ef';
+  },
+
+  updateThemeIcon(theme) {
+    const btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.innerHTML = theme === 'dark'
+        ? '<i class="fa-solid fa-sun"></i>'
+        : '<i class="fa-solid fa-moon"></i>';
+      btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    }
+  },
+
   showView(view) {
     this.currentView = view;
+    // Persist across refresh
+    localStorage.setItem('hc_current_view', view);
     // Close sidebar on mobile
     this.closeSidebar();
     // Update nav

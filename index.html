@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f1923" />
+  <meta name="theme-color" content="#f5f3ef" id="meta-theme-color" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -22,6 +22,16 @@
 
   <!-- App Styles -->
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Prevent flash of wrong theme -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('hc_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      var m = document.getElementById('meta-theme-color');
+      if (m) m.content = t === 'dark' ? '#0f1923' : '#f5f3ef';
+    })();
+  </script>
 </head>
 <body>
 
@@ -76,6 +86,9 @@
         <span id="header-date"></span>
       </div>
       <div class="header-right">
+        <button class="theme-toggle" id="theme-toggle" onclick="App.toggleTheme()" title="Toggle dark mode">
+          <i class="fa-solid fa-moon"></i>
+        </button>
         <button class="btn-end-day" onclick="App.endOfDay()">
           <i class="fa-solid fa-moon"></i> End of Day
         </button>
@@ -326,6 +339,18 @@
             <div class="settings-actions">
               <button class="btn btn-danger-outline" onclick="App.resetAllData()">
                 <i class="fa-solid fa-trash"></i> Reset All Data
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h4><i class="fa-solid fa-palette"></i> Appearance</h4>
+            <p style="font-size: .85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Switch between light and dark themes.
+            </p>
+            <div class="settings-actions">
+              <button class="btn btn-outline" onclick="App.toggleTheme()" id="theme-toggle-settings">
+                <i class="fa-solid fa-circle-half-stroke"></i> Toggle Dark Mode
               </button>
             </div>
           </div>
