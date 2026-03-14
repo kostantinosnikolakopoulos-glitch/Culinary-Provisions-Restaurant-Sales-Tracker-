@@ -1563,14 +1563,12 @@ const App = {
     container.querySelectorAll('.btn-approve-shift').forEach(btn => {
       btn.addEventListener('click', () => {
         Store.approveShift(btn.dataset.rec);
-        this.toast('Shift approved', 'success');
         this.renderStaff();
       });
     });
     container.querySelectorAll('.btn-decline-shift').forEach(btn => {
       btn.addEventListener('click', () => {
         Store.declineShift(btn.dataset.rec);
-        this.toast('Shift declined', 'info');
         this.renderStaff();
       });
     });
@@ -1799,7 +1797,6 @@ const App = {
       btn.addEventListener('click', () => {
         Store.approveShift(btn.dataset.rec);
         updateRowStatus(btn, 'approved', 'Approved', 'badge-approved');
-        this.toast('Shift approved', 'success');
         setTimeout(() => this.renderStaff(), 0);
       });
     });
@@ -1807,7 +1804,6 @@ const App = {
       btn.addEventListener('click', () => {
         Store.declineShift(btn.dataset.rec);
         updateRowStatus(btn, 'declined', 'Declined', 'badge-declined');
-        this.toast('Shift declined', 'info');
         setTimeout(() => this.renderStaff(), 0);
       });
     });
