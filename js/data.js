@@ -489,9 +489,29 @@ function generateDemoDay() {
     }
   });
 
-  // Save
+  // Save orders
   const existingOrders = Store.getOrders();
   const cleanOrders = existingOrders.filter(o => !o.id.startsWith('demo_ord_'));
   Store.saveOrders([...cleanOrders, ...orders]);
+
+  // Generate time clock records based on which staff had orders
+  const staffShifts = {};
+  orders.forEach(o => {
+    if (!staffShifts[o.staffId]) staffShifts[o.staffId] = { first: o.createdAt, last: o.closedAt };
+    if (o.createdAt < staffShifts[o.staffId].first) staffShifts[o.staffId].first = o.createdAt;
+    if (o.closedAt > staffShifts[o.staffId].last) staffShifts[o.staffId].last = o.closedAt;
+  });
+
+  const clockRecords = [];
+  Object.keys(staffShifts).forEach(staffId => {
+    const sh = staffShifts[staffId];
+    // Clock in 15-30 min before first order
+    const clockIn = new Date(new Date(sh.first).getTime() - (15 + Math.floor(Math.random() * 16)) * 60000).toISOString();
+    // Clock out 10-25 min after last order closed
+    const clockOut = new Date(new Date(sh.last).getTime() + (10 + Math.floor(Math.random() * 16)) * 60000).toISOString();
+    clockRecords.push({ staffId, clockIn, clockOut });
+  });
+  Store.saveTimeClock(clockRecords);
+
   return orders;
 }
