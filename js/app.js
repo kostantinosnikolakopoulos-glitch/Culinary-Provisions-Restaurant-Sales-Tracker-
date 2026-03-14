@@ -202,6 +202,7 @@ const App = {
       case 'reports':    this.renderReports();   break;
       case 'history':    this.renderHistory();   break;
       case 'settings':   this.renderSettings();  break;
+      case 'admin':      this.renderAdmin();     break;
     }
   },
 
@@ -2765,6 +2766,152 @@ const App = {
   },
 
   // ── Toast notifications ────────────────────────────────
+  // ════════════════════════════════════════════════════════
+  //  ADMIN PANEL
+  // ════════════════════════════════════════════════════════
+  async renderAdmin() {
+    const container = document.getElementById('admin-panel');
+    if (!container) return;
+
+    if (!Auth.isAdmin) {
+      container.innerHTML = '<p class="text-muted">Access denied.</p>';
+      return;
+    }
+
+    container.innerHTML = '<p class="text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading tenants…</p>';
+
+    try {
+      const snapshot = await db.collection('users').get();
+      const tenants = [];
+      snapshot.forEach(doc => {
+        tenants.push({ uid: doc.id, ...doc.data() });
+      });
+
+      let html = `
+        <div class="admin-stats-row">
+          <div class="kpi-card">
+            <span class="kpi-value">${tenants.length}</span>
+            <span class="kpi-label">Total Accounts</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value">${tenants.filter(t => t.role === 'admin').length}</span>
+            <span class="kpi-label">Admins</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-value">${tenants.filter(t => t.role !== 'admin').length}</span>
+            <span class="kpi-label">Businesses</span>
+          </div>
+        </div>
+
+        <div class="admin-tenants-section">
+          <h3><i class="fa-solid fa-building"></i> Registered Accounts</h3>
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Business Name</th>
+                <th>Email</th>
+                <th class="text-center">Role</th>
+                <th class="text-center">Registered</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tenants.map(t => {
+                const date = t.createdAt ? new Date(t.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—';
+                const roleBadge = t.role === 'admin'
+                  ? '<span class="badge-approved">Admin</span>'
+                  : '<span class="badge-pending">User</span>';
+                return `<tr>
+                  <td><strong>${t.businessName || '—'}</strong></td>
+                  <td>${t.email || '—'}</td>
+                  <td class="text-center">${roleBadge}</td>
+                  <td class="text-center">${date}</td>
+                  <td class="text-center">
+                    <button class="btn btn-sm btn-outline btn-admin-view" data-uid="${t.uid}" data-name="${t.businessName || t.email}">
+                      <i class="fa-solid fa-eye"></i> View Data
+                    </button>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+      container.innerHTML = html;
+
+      // Bind "View Data" buttons
+      container.querySelectorAll('.btn-admin-view').forEach(btn => {
+        btn.addEventListener('click', () => this.showTenantData(btn.dataset.uid, btn.dataset.name));
+      });
+
+    } catch (err) {
+      console.error('Admin panel error:', err);
+      container.innerHTML = '<p class="text-muted">Failed to load tenants. Check console for details.</p>';
+    }
+  },
+
+  async showTenantData(uid, name) {
+    const modal = document.getElementById('modal');
+    modal.innerHTML = `
+      <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box modal-wide">
+          <h3><i class="fa-solid fa-building"></i> ${name}</h3>
+          <p class="text-muted" style="margin-bottom:1rem"><i class="fa-solid fa-spinner fa-spin"></i> Loading store data…</p>
+          <div class="modal-actions"><button class="btn btn-outline" id="modal-cancel">Close</button></div>
+        </div>
+      </div>`;
+    modal.classList.remove('hidden');
+    document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
+    document.getElementById('modal-overlay').onclick = (e) => { if (e.target.id === 'modal-overlay') modal.classList.add('hidden'); };
+
+    try {
+      const snapshot = await db.collection('users').doc(uid).collection('store').get();
+      const storeData = {};
+      snapshot.forEach(doc => {
+        const val = doc.data().value;
+        storeData[doc.id] = Array.isArray(val) ? val.length : (typeof val === 'string' ? val : '—');
+      });
+
+      let tableRows = '';
+      const labels = {
+        menu: 'Menu Items', categories: 'Categories', staff: 'Staff Members',
+        orders: 'Orders', pantry: 'Pantry Items', timeClock: 'Time Clock Records',
+        dayLog: 'Day Logs', weekLog: 'Week Logs', monthLog: 'Month Logs',
+        settings: 'Settings', businessDate: 'Business Date'
+      };
+      Object.entries(storeData).forEach(([key, val]) => {
+        const label = labels[key] || key;
+        const display = typeof val === 'number' ? `${val} records` : val;
+        tableRows += `<tr><td>${label}</td><td class="text-right">${display}</td></tr>`;
+      });
+
+      if (!tableRows) tableRows = '<tr><td colspan="2" class="text-muted">No data yet — this user hasn\'t used the app.</td></tr>';
+
+      const content = modal.querySelector('.modal-box');
+      content.innerHTML = `
+        <h3><i class="fa-solid fa-building"></i> ${name}</h3>
+        <p class="text-muted" style="margin-bottom:1rem">User ID: <code style="font-size:.75rem">${uid}</code></p>
+        <table class="report-table">
+          <thead><tr><th>Data Type</th><th class="text-right">Count</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <div class="modal-actions" style="margin-top:1.2rem">
+          <button class="btn btn-outline" id="modal-cancel-2">Close</button>
+        </div>`;
+      document.getElementById('modal-cancel-2').onclick = () => modal.classList.add('hidden');
+    } catch (err) {
+      console.error('Tenant data error:', err);
+      const content = modal.querySelector('.modal-box');
+      if (content) content.innerHTML = `
+        <h3><i class="fa-solid fa-building"></i> ${name}</h3>
+        <p class="text-muted">Failed to load data.</p>
+        <div class="modal-actions"><button class="btn btn-outline" onclick="document.getElementById('modal').classList.add('hidden')">Close</button></div>`;
+    }
+  },
+
+  // ════════════════════════════════════════════════════════
+  //  TOAST
+  // ════════════════════════════════════════════════════════
   toast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');

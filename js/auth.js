@@ -4,6 +4,7 @@
 
 const Auth = {
   currentUser: null,
+  isAdmin: false,
 
   init() {
     this.bindEvents();
@@ -15,19 +16,37 @@ const Auth = {
 
       if (user) {
         this.currentUser = user;
+        // Check admin role
+        await this.checkRole(user.uid);
         // Pull cloud data into localStorage
         await this.loadUserData(user.uid);
         // Boot the app
         authBox.classList.add('hidden');
         appBox.classList.remove('hidden');
+        // Show/hide admin nav
+        const adminNav = document.getElementById('nav-admin');
+        if (adminNav) {
+          if (this.isAdmin) adminNav.classList.remove('hidden');
+          else adminNav.classList.add('hidden');
+        }
         App.init();
       } else {
         this.currentUser = null;
+        this.isAdmin = false;
         authBox.classList.remove('hidden');
         appBox.classList.add('hidden');
         modalBox.classList.add('hidden');
       }
     });
+  },
+
+  async checkRole(uid) {
+    try {
+      const doc = await db.collection('users').doc(uid).get();
+      this.isAdmin = doc.exists && doc.data().role === 'admin';
+    } catch {
+      this.isAdmin = false;
+    }
   },
 
   bindEvents() {

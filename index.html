@@ -116,6 +116,7 @@
 
       <div class="nav-section">System</div>
       <a data-view="settings"><i class="fa-solid fa-gear"></i> Settings</a>
+      <a data-view="admin" id="nav-admin" class="hidden"><i class="fa-solid fa-shield-halved"></i> Admin Panel</a>
     </nav>
 
     <div class="sidebar-footer">
@@ -425,6 +426,12 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- ─── ADMIN PANEL (admin only) ──────────────────── -->
+      <section class="view-section hidden" id="view-admin">
+        <h2 class="view-title"><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
+        <div id="admin-panel"></div>
       </section>
 
     </main>
