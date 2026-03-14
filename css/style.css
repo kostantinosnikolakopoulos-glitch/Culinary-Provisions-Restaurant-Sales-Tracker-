@@ -1024,7 +1024,7 @@ input:focus, select:focus {
   transition: color var(--transition);
 }
 .staff-name-link:hover { text-decoration: underline; }
-.modal-wide { max-width: 720px; }
+.modal-wide { max-width: 860px; width: 95vw; }
 .staff-detail-header {
   display: flex;
   align-items: center;
@@ -1033,9 +1033,10 @@ input:focus, select:focus {
 }
 .staff-detail-stats {
   display: flex;
-  gap: .4rem;
+  gap: .3rem;
   flex-wrap: nowrap;
   margin-bottom: 1rem;
+  overflow: hidden;
 }
 .detail-stat {
   flex: 1 1 0;
@@ -1044,20 +1045,26 @@ input:focus, select:focus {
   background: var(--bg-base);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: .6rem .3rem;
+  padding: .45rem .2rem;
+  overflow: hidden;
 }
 .detail-stat-val {
   display: block;
-  font-size: 1.05rem;
+  font-size: .95rem;
   font-weight: 700;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .detail-stat-label {
   display: block;
-  font-size: .65rem;
+  font-size: .6rem;
   color: var(--text-muted);
-  margin-top: .15rem;
+  margin-top: .1rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .shift-time-input {
   border: 1px solid var(--border);

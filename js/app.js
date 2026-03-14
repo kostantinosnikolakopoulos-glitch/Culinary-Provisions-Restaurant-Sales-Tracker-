@@ -1800,7 +1800,7 @@ const App = {
         Store.approveShift(btn.dataset.rec);
         updateRowStatus(btn, 'approved', 'Approved', 'badge-approved');
         this.toast('Shift approved', 'success');
-        this.renderStaff();
+        setTimeout(() => this.renderStaff(), 0);
       });
     });
     modal.querySelectorAll('.btn-decline-detail').forEach(btn => {
@@ -1808,7 +1808,7 @@ const App = {
         Store.declineShift(btn.dataset.rec);
         updateRowStatus(btn, 'declined', 'Declined', 'badge-declined');
         this.toast('Shift declined', 'info');
-        this.renderStaff();
+        setTimeout(() => this.renderStaff(), 0);
       });
     });
   },
