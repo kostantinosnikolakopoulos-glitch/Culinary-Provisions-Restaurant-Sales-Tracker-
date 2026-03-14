@@ -1745,25 +1745,69 @@ const App = {
         const dateBase = rec[field] ? rec[field].slice(0, 10) : rec.clockIn.slice(0, 10);
         const newISO = new Date(`${dateBase}T${input.value}:00`).toISOString();
         Store.updateShift(recId, { [field]: newISO });
+        // Recalculate and update hours cell in-place
+        const updatedRec = Store.getTimeClock().find(r => r.id === recId);
+        if (updatedRec && updatedRec.clockOut) {
+          const ms = new Date(updatedRec.clockOut) - new Date(updatedRec.clockIn);
+          const row = input.closest('tr');
+          const hoursCell = row.querySelector('td:nth-child(3)');
+          if (hoursCell) hoursCell.textContent = (ms / 3600000).toFixed(2) + 'h';
+        }
+        // Update stats
+        const recs = Store.getTimeClock().filter(r => r.staffId === staffId);
+        let tot = 0, app = 0;
+        recs.forEach(r => {
+          const ms2 = (r.clockOut ? new Date(r.clockOut) : new Date()) - new Date(r.clockIn);
+          tot += ms2 / 3600000;
+          if (r.status === 'approved') app += ms2 / 3600000;
+        });
+        const stats = modal.querySelectorAll('.detail-stat-val');
+        if (stats[0]) stats[0].textContent = tot.toFixed(2) + 'h';
+        if (stats[1]) stats[1].textContent = app.toFixed(2) + 'h';
         this.toast('Time adjusted', 'info');
-        this.showStaffDetail(staffId);
       });
     });
 
-    // Approve / Decline inside detail modal
+    // Approve / Decline inside detail modal — in-place DOM update for instant feedback
+    const updateRowStatus = (btn, newStatus, label, badgeClass) => {
+      const row = btn.closest('tr');
+      // Update status badge
+      const statusCell = row.querySelector('td:nth-child(5)');
+      statusCell.innerHTML = `<span class="${badgeClass}">${label}</span>`;
+      // Remove action buttons
+      const actionsCell = row.querySelector('td:nth-child(6)');
+      actionsCell.innerHTML = '';
+      // Disable time inputs if approved
+      if (newStatus === 'approved') {
+        row.querySelectorAll('.shift-time-input').forEach(i => i.disabled = true);
+      }
+      // Recalculate stats from store
+      const recs = Store.getTimeClock().filter(r => r.staffId === staffId);
+      let tot = 0, app = 0;
+      recs.forEach(r => {
+        const ms = (r.clockOut ? new Date(r.clockOut) : new Date()) - new Date(r.clockIn);
+        const h = ms / 3600000;
+        tot += h;
+        if (r.status === 'approved') app += h;
+      });
+      const stats = modal.querySelectorAll('.detail-stat-val');
+      if (stats[0]) stats[0].textContent = tot.toFixed(2) + 'h';
+      if (stats[1]) stats[1].textContent = app.toFixed(2) + 'h';
+    };
+
     modal.querySelectorAll('.btn-approve-detail').forEach(btn => {
       btn.addEventListener('click', () => {
         Store.approveShift(btn.dataset.rec);
+        updateRowStatus(btn, 'approved', 'Approved', 'badge-approved');
         this.toast('Shift approved', 'success');
-        this.showStaffDetail(staffId);
         this.renderStaff();
       });
     });
     modal.querySelectorAll('.btn-decline-detail').forEach(btn => {
       btn.addEventListener('click', () => {
         Store.declineShift(btn.dataset.rec);
+        updateRowStatus(btn, 'declined', 'Declined', 'badge-declined');
         this.toast('Shift declined', 'info');
-        this.showStaffDetail(staffId);
         this.renderStaff();
       });
     });
