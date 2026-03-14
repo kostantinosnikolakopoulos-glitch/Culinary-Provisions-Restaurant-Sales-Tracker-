@@ -1024,7 +1024,7 @@ input:focus, select:focus {
   transition: color var(--transition);
 }
 .staff-name-link:hover { text-decoration: underline; }
-.modal-wide { max-width: 680px; }
+.modal-wide { max-width: 720px; }
 .staff-detail-header {
   display: flex;
   align-items: center;
@@ -1038,25 +1038,26 @@ input:focus, select:focus {
   margin-bottom: 1rem;
 }
 .detail-stat {
-  flex: 1;
-  min-width: 80px;
+  flex: 1 1 0;
+  min-width: 0;
   text-align: center;
   background: var(--bg-base);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: .6rem .4rem;
+  padding: .6rem .3rem;
 }
 .detail-stat-val {
   display: block;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
 }
 .detail-stat-label {
   display: block;
-  font-size: .7rem;
+  font-size: .65rem;
   color: var(--text-muted);
   margin-top: .15rem;
+  white-space: nowrap;
 }
 .shift-time-input {
   border: 1px solid var(--border);
