@@ -2269,3 +2269,34 @@ input:focus, select:focus {
   color: var(--accent);
   font-weight: 600;
 }
+
+/* Impersonation banner */
+.impersonation-banner {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .6rem 1.2rem;
+  background: #e74c3c;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.impersonation-banner i {
+  font-size: 1.1rem;
+}
+.impersonation-banner strong {
+  font-weight: 700;
+}
+.impersonation-banner .btn {
+  margin-left: auto;
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.4);
+  font-size: .78rem;
+}
+.impersonation-banner .btn:hover {
+  background: rgba(255,255,255,.35);
+}

@@ -2827,8 +2827,11 @@ const App = {
                   <td class="text-center">${roleBadge}</td>
                   <td class="text-center">${date}</td>
                   <td class="text-center">
-                    <button class="btn btn-sm btn-outline btn-admin-view" data-uid="${t.uid}" data-name="${t.businessName || t.email}">
-                      <i class="fa-solid fa-eye"></i> View Data
+                    <button class="btn btn-sm btn-primary btn-admin-enter" data-uid="${t.uid}" data-name="${t.businessName || t.email}">
+                      <i class="fa-solid fa-right-to-bracket"></i> Enter
+                    </button>
+                    <button class="btn btn-sm btn-outline btn-admin-view" data-uid="${t.uid}" data-name="${t.businessName || t.email}" style="margin-left:.3rem">
+                      <i class="fa-solid fa-eye"></i> Data
                     </button>
                   </td>
                 </tr>`;
@@ -2838,6 +2841,11 @@ const App = {
         </div>`;
 
       container.innerHTML = html;
+
+      // Bind "Enter Account" buttons
+      container.querySelectorAll('.btn-admin-enter').forEach(btn => {
+        btn.addEventListener('click', () => Auth.impersonate(btn.dataset.uid, btn.dataset.name));
+      });
 
       // Bind "View Data" buttons
       container.querySelectorAll('.btn-admin-view').forEach(btn => {

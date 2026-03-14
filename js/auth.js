@@ -5,6 +5,7 @@
 const Auth = {
   currentUser: null,
   isAdmin: false,
+  impersonating: null, // { uid, name } when admin is viewing a tenant
 
   init() {
     this.bindEvents();
@@ -158,6 +159,57 @@ const Auth = {
       'auth/invalid-credential':   'Invalid email or password.',
     };
     return map[code] || 'Something went wrong. Please try again.';
+  },
+
+  /** Admin: enter a tenant's account (load their data, redirect writes) */
+  async impersonate(uid, name) {
+    if (!this.isAdmin) return;
+    this.impersonating = { uid, name };
+    // Load tenant data into localStorage
+    await this.loadUserData(uid);
+    // Re-init Store so it picks up the new data
+    Store.init();
+    // Show impersonation banner
+    this.showImpersonationBanner(name);
+    // Go to dashboard
+    App.showView('dashboard');
+  },
+
+  /** Admin: return to own account */
+  async exitImpersonation() {
+    if (!this.impersonating) return;
+    this.impersonating = null;
+    // Reload admin's own data
+    await this.loadUserData(this.currentUser.uid);
+    Store.init();
+    // Remove banner
+    this.hideImpersonationBanner();
+    // Go back to admin panel
+    App.showView('admin');
+  },
+
+  /** Get the UID to use for Firestore writes (tenant's if impersonating) */
+  getActiveUid() {
+    if (this.impersonating) return this.impersonating.uid;
+    return this.currentUser ? this.currentUser.uid : null;
+  },
+
+  showImpersonationBanner(name) {
+    this.hideImpersonationBanner();
+    const banner = document.createElement('div');
+    banner.id = 'impersonation-banner';
+    banner.className = 'impersonation-banner';
+    banner.innerHTML = `
+      <i class="fa-solid fa-user-secret"></i>
+      <span>Viewing as: <strong>${name}</strong></span>
+      <button class="btn btn-sm" onclick="Auth.exitImpersonation()">
+        <i class="fa-solid fa-arrow-left"></i> Return to Admin
+      </button>`;
+    document.querySelector('.main-content')?.prepend(banner);
+  },
+
+  hideImpersonationBanner() {
+    document.getElementById('impersonation-banner')?.remove();
   }
 };
 

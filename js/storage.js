@@ -27,12 +27,15 @@ const Store = {
   },
   _set(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
-    // Sync to Firestore in background
+    // Sync to Firestore in background (uses tenant UID if admin is impersonating)
     if (typeof auth !== 'undefined' && auth.currentUser && FIRESTORE_DOC_MAP[key]) {
-      db.collection('users').doc(auth.currentUser.uid).collection('store')
-        .doc(FIRESTORE_DOC_MAP[key])
-        .set({ value: value })
-        .catch(err => console.error('Firestore sync error:', err));
+      const uid = (typeof Auth !== 'undefined' && Auth.getActiveUid) ? Auth.getActiveUid() : auth.currentUser.uid;
+      if (uid) {
+        db.collection('users').doc(uid).collection('store')
+          .doc(FIRESTORE_DOC_MAP[key])
+          .set({ value: value })
+          .catch(err => console.error('Firestore sync error:', err));
+      }
     }
   },
 
