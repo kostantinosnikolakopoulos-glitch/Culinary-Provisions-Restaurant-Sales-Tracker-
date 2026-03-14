@@ -339,23 +339,32 @@ const Store = {
   getTimeClock()       { return this._get(STORAGE_KEYS.TIME_CLOCK, []); },
   saveTimeClock(recs)  { this._set(STORAGE_KEYS.TIME_CLOCK, recs); },
 
-  /** Clock a staff member in. Creates a new record {staffId, clockIn, clockOut:null} */
+  /** Clock a staff member in. Creates a new record with id, status=pending */
   clockIn(staffId) {
     const recs = this.getTimeClock();
-    // Don't allow double clock-in
     if (recs.find(r => r.staffId === staffId && !r.clockOut)) return null;
-    const rec = { staffId, clockIn: new Date().toISOString(), clockOut: null };
+    const rec = {
+      id: 'tc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      staffId,
+      clockIn: new Date().toISOString(),
+      clockOut: null,
+      status: 'pending',   // pending | approved | declined
+      openTables: 0,
+    };
     recs.push(rec);
     this.saveTimeClock(recs);
     return rec;
   },
 
-  /** Clock a staff member out. Closes the open record. */
+  /** Clock a staff member out. Closes the open record and counts open tables. */
   clockOut(staffId) {
     const recs = this.getTimeClock();
     const open = recs.find(r => r.staffId === staffId && !r.clockOut);
     if (!open) return null;
     open.clockOut = new Date().toISOString();
+    // Count how many tables this staff member still has open
+    const orders = this.getOrders();
+    open.openTables = orders.filter(o => o.staffId === staffId && o.status === 'open').length;
     this.saveTimeClock(recs);
     return open;
   },
@@ -370,6 +379,34 @@ const Store = {
     return this.getTimeClock().filter(r => !r.clockOut).map(r => r.staffId);
   },
 
+  /** Approve a shift by record id */
+  approveShift(recId) {
+    const recs = this.getTimeClock();
+    const rec = recs.find(r => r.id === recId);
+    if (rec) { rec.status = 'approved'; this.saveTimeClock(recs); }
+    return rec;
+  },
+
+  /** Decline a shift by record id */
+  declineShift(recId) {
+    const recs = this.getTimeClock();
+    const rec = recs.find(r => r.id === recId);
+    if (rec) { rec.status = 'declined'; this.saveTimeClock(recs); }
+    return rec;
+  },
+
+  /** Update a shift record (manual time adjustments) */
+  updateShift(recId, updates) {
+    const recs = this.getTimeClock();
+    const rec = recs.find(r => r.id === recId);
+    if (!rec) return null;
+    if (updates.clockIn)  rec.clockIn  = updates.clockIn;
+    if (updates.clockOut) rec.clockOut = updates.clockOut;
+    if (updates.status)   rec.status   = updates.status;
+    this.saveTimeClock(recs);
+    return rec;
+  },
+
   /** Build a timesheet summary from time clock records */
   buildTimesheet(records, staff) {
     const staffMap = {};
@@ -380,11 +417,18 @@ const Store = {
       const clockIn = r.clockIn;
       const clockOut = r.clockOut || new Date().toISOString();
       const ms = new Date(clockOut) - new Date(clockIn);
-      byStaff[r.staffId].shifts.push({ clockIn, clockOut: r.clockOut, hours: ms / 3600000 });
+      byStaff[r.staffId].shifts.push({
+        id: r.id,
+        clockIn,
+        clockOut: r.clockOut,
+        hours: ms / 3600000,
+        status: r.status || 'pending',
+        openTables: r.openTables || 0,
+      });
     });
-    // Calculate totals
     return Object.values(byStaff).map(s => {
       s.totalHours = s.shifts.reduce((sum, sh) => sum + sh.hours, 0);
+      s.approvedHours = s.shifts.filter(sh => sh.status === 'approved').reduce((sum, sh) => sum + sh.hours, 0);
       return s;
     });
   },

@@ -1460,15 +1460,18 @@ const App = {
         const isClocked = clockedIn.includes(s.id);
         const openRec = timeRecs.find(r => r.staffId === s.id && !r.clockOut);
         const clockInTime = openRec ? new Date(openRec.clockIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+        const staffRecs = timeRecs.filter(r => r.staffId === s.id);
+        const pendingCount = staffRecs.filter(r => (r.status || 'pending') === 'pending' && r.clockOut).length;
         return `
         <div class="staff-card ${s.active ? '' : 'staff-inactive'} ${isClocked ? 'staff-clocked-in' : ''}">
           <div class="staff-avatar ${isClocked ? 'avatar-on-duty' : ''}">${s.name.split(' ').map(n => n[0]).join('').toUpperCase()}</div>
           <div class="staff-info">
-            <h4>${s.name}</h4>
+            <h4 class="staff-name-link" data-id="${s.id}">${s.name}</h4>
             <span class="staff-role">${s.role || 'Server'}</span>
             ${isClocked
               ? `<span class="status-dot dot-clocked-in"><i class="fa-solid fa-circle-dot"></i> On duty since ${clockInTime}</span>`
               : `<span class="status-dot ${s.active ? 'dot-active' : 'dot-inactive'}">${s.active ? 'Off duty' : 'Inactive'}</span>`}
+            ${pendingCount > 0 ? `<span class="badge-pending-count">${pendingCount} pending</span>` : ''}
           </div>
           <div class="staff-actions">
             ${s.active ? (isClocked
@@ -1490,6 +1493,7 @@ const App = {
     if (timeRecs.length > 0) {
       const timesheet = Store.buildTimesheet(timeRecs, staff);
       const totalHours = timesheet.reduce((s, t) => s + t.totalHours, 0);
+      const approvedHours = timesheet.reduce((s, t) => s + t.approvedHours, 0);
       html += `
       <div class="timesheet-section">
         <h3><i class="fa-solid fa-clipboard-list"></i> Today's Timesheet</h3>
@@ -1500,7 +1504,9 @@ const App = {
               <th class="text-center">Clock In</th>
               <th class="text-center">Clock Out</th>
               <th class="text-right">Hours</th>
+              <th class="text-center">Open Tables</th>
               <th class="text-center">Status</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1509,12 +1515,24 @@ const App = {
               const outTime = sh.clockOut ? new Date(sh.clockOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—';
               const hrs = sh.hours;
               const isOpen = !sh.clockOut;
+              const st = sh.status || 'pending';
+              const statusBadge = isOpen
+                ? '<span class="badge-on-duty">On Duty</span>'
+                : st === 'approved' ? '<span class="badge-approved">Approved</span>'
+                : st === 'declined' ? '<span class="badge-declined">Declined</span>'
+                : '<span class="badge-pending">Pending</span>';
+              const actions = (!isOpen && st === 'pending') ? `
+                <button class="btn-icon btn-approve-shift" data-rec="${sh.id}" title="Approve"><i class="fa-solid fa-check"></i></button>
+                <button class="btn-icon btn-decline-shift" data-rec="${sh.id}" title="Decline"><i class="fa-solid fa-xmark"></i></button>
+              ` : '';
               return `<tr>
-                <td>${t.name}</td>
+                <td class="staff-name-link" data-id="${t.staffId}" style="cursor:pointer">${t.name}</td>
                 <td class="text-center">${inTime}</td>
                 <td class="text-center">${outTime}</td>
                 <td class="text-right">${hrs.toFixed(2)}h</td>
-                <td class="text-center">${isOpen ? '<span class="badge-on-duty">On Duty</span>' : '<span class="badge-completed">Completed</span>'}</td>
+                <td class="text-center">${isOpen ? '—' : (sh.openTables || 0)}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${actions}</td>
               </tr>`;
             }).join('')).join('')}
           </tbody>
@@ -1522,6 +1540,8 @@ const App = {
             <tr>
               <td colspan="3"><strong>Total</strong></td>
               <td class="text-right"><strong>${totalHours.toFixed(2)}h</strong></td>
+              <td></td>
+              <td class="text-center text-muted">${approvedHours.toFixed(2)}h approved</td>
               <td></td>
             </tr>
           </tfoot>
@@ -1533,6 +1553,27 @@ const App = {
 
     // ── Event bindings ──
     document.getElementById('btn-add-staff')?.addEventListener('click', () => this.showStaffModal());
+
+    // Click staff name → detail modal
+    container.querySelectorAll('.staff-name-link').forEach(el => {
+      el.addEventListener('click', () => this.showStaffDetail(el.dataset.id));
+    });
+
+    // Approve / Decline shifts inline
+    container.querySelectorAll('.btn-approve-shift').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.approveShift(btn.dataset.rec);
+        this.toast('Shift approved', 'success');
+        this.renderStaff();
+      });
+    });
+    container.querySelectorAll('.btn-decline-shift').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.declineShift(btn.dataset.rec);
+        this.toast('Shift declined', 'info');
+        this.renderStaff();
+      });
+    });
 
     // Clock in/out
     container.querySelectorAll('.btn-clock-in').forEach(btn => {
@@ -1574,6 +1615,156 @@ const App = {
           this.toast('Staff member removed', 'info');
           this.renderStaff();
         }
+      });
+    });
+  },
+
+  /** Staff detail modal — all shifts, approve/decline, edit times */
+  showStaffDetail(staffId) {
+    const staff = Store.getStaff();
+    const member = staff.find(s => s.id === staffId);
+    if (!member) return;
+    const timeRecs = Store.getTimeClock().filter(r => r.staffId === staffId);
+    const orders = Store.getOrders();
+    const openOrders = orders.filter(o => o.staffId === staffId && o.status === 'open');
+    const closedToday = orders.filter(o => o.staffId === staffId && o.status === 'closed');
+    const isClocked = Store.isClockedIn(staffId);
+
+    let totalHours = 0;
+    let approvedHours = 0;
+    timeRecs.forEach(r => {
+      const ms = (r.clockOut ? new Date(r.clockOut) : new Date()) - new Date(r.clockIn);
+      const h = ms / 3600000;
+      totalHours += h;
+      if (r.status === 'approved') approvedHours += h;
+    });
+
+    const modal = document.getElementById('modal');
+    modal.innerHTML = `
+      <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box modal-wide">
+          <div class="staff-detail-header">
+            <div class="staff-avatar ${isClocked ? 'avatar-on-duty' : ''}" style="width:56px;height:56px;font-size:1.1rem;">
+              ${member.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+            </div>
+            <div>
+              <h3>${member.name}</h3>
+              <span class="staff-role">${member.role || 'Server'}</span>
+              ${isClocked ? '<span class="badge-on-duty" style="margin-left:.5rem">On Duty</span>' : ''}
+            </div>
+          </div>
+
+          <div class="staff-detail-stats">
+            <div class="detail-stat">
+              <span class="detail-stat-val">${totalHours.toFixed(2)}h</span>
+              <span class="detail-stat-label">Total Hours</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-val">${approvedHours.toFixed(2)}h</span>
+              <span class="detail-stat-label">Approved</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-val">${timeRecs.length}</span>
+              <span class="detail-stat-label">Shifts</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-val">${openOrders.length}</span>
+              <span class="detail-stat-label">Open Tables</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-val">${closedToday.length}</span>
+              <span class="detail-stat-label">Orders Today</span>
+            </div>
+          </div>
+
+          ${timeRecs.length > 0 ? `
+          <h4 style="margin:1rem 0 .5rem"><i class="fa-solid fa-clock"></i> Shift Records</h4>
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th class="text-center">Clock In</th>
+                <th class="text-center">Clock Out</th>
+                <th class="text-right">Hours</th>
+                <th class="text-center">Open Tables</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${timeRecs.map(r => {
+                const inTime = new Date(r.clockIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                const outTime = r.clockOut ? new Date(r.clockOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—';
+                const ms = (r.clockOut ? new Date(r.clockOut) : new Date()) - new Date(r.clockIn);
+                const hrs = (ms / 3600000).toFixed(2);
+                const isOpen = !r.clockOut;
+                const st = r.status || 'pending';
+                const statusBadge = isOpen ? '<span class="badge-on-duty">On Duty</span>'
+                  : st === 'approved' ? '<span class="badge-approved">Approved</span>'
+                  : st === 'declined' ? '<span class="badge-declined">Declined</span>'
+                  : '<span class="badge-pending">Pending</span>';
+                // Extract HH:MM for time inputs
+                const inVal = r.clockIn.slice(11, 16);
+                const outVal = r.clockOut ? r.clockOut.slice(11, 16) : '';
+                return `<tr>
+                  <td class="text-center">
+                    <input type="time" class="shift-time-input" data-rec="${r.id}" data-field="clockIn" value="${inVal}" ${st === 'approved' ? 'disabled' : ''} />
+                  </td>
+                  <td class="text-center">
+                    ${r.clockOut ? `<input type="time" class="shift-time-input" data-rec="${r.id}" data-field="clockOut" value="${outVal}" ${st === 'approved' ? 'disabled' : ''} />` : '—'}
+                  </td>
+                  <td class="text-right">${hrs}h</td>
+                  <td class="text-center">${isOpen ? '—' : (r.openTables || 0)}</td>
+                  <td class="text-center">${statusBadge}</td>
+                  <td class="text-center">
+                    ${!isOpen && st !== 'approved' ? `<button class="btn btn-sm btn-approve-detail" data-rec="${r.id}"><i class="fa-solid fa-check"></i> Approve</button>` : ''}
+                    ${!isOpen && st !== 'declined' ? `<button class="btn btn-sm btn-decline-detail" data-rec="${r.id}" style="margin-left:.3rem"><i class="fa-solid fa-xmark"></i> Decline</button>` : ''}
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>` : '<p class="text-muted" style="margin-top:1rem;">No shifts recorded today.</p>'}
+
+          <div class="modal-actions" style="margin-top:1.2rem;">
+            <button class="btn btn-outline" id="modal-cancel">Close</button>
+          </div>
+        </div>
+      </div>`;
+    modal.classList.remove('hidden');
+
+    // Close modal
+    document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
+    document.getElementById('modal-overlay').onclick = (e) => { if (e.target.id === 'modal-overlay') modal.classList.add('hidden'); };
+
+    // Time adjustments
+    modal.querySelectorAll('.shift-time-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const recId = input.dataset.rec;
+        const field = input.dataset.field;
+        const rec = Store.getTimeClock().find(r => r.id === recId);
+        if (!rec) return;
+        const dateBase = rec[field] ? rec[field].slice(0, 10) : rec.clockIn.slice(0, 10);
+        const newISO = new Date(`${dateBase}T${input.value}:00`).toISOString();
+        Store.updateShift(recId, { [field]: newISO });
+        this.toast('Time adjusted', 'info');
+        this.showStaffDetail(staffId);
+      });
+    });
+
+    // Approve / Decline inside detail modal
+    modal.querySelectorAll('.btn-approve-detail').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.approveShift(btn.dataset.rec);
+        this.toast('Shift approved', 'success');
+        this.showStaffDetail(staffId);
+        this.renderStaff();
+      });
+    });
+    modal.querySelectorAll('.btn-decline-detail').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.declineShift(btn.dataset.rec);
+        this.toast('Shift declined', 'info');
+        this.showStaffDetail(staffId);
+        this.renderStaff();
       });
     });
   },
@@ -2280,19 +2471,24 @@ const App = {
     // Timesheet
     if (day.timesheet && day.timesheet.length > 0) {
       const totalHrs = day.timesheet.reduce((s, t) => s + t.totalHours, 0);
+      const approvedHrs = day.timesheet.reduce((s, t) => s + (t.approvedHours || 0), 0);
       html += `
         <div class="report-section">
           <h4><i class="fa-solid fa-user-clock"></i> Staff Timesheet</h4>
           <table class="report-table">
-            <thead><tr><th>Staff Member</th><th class="text-center">Clock In</th><th class="text-center">Clock Out</th><th class="text-right">Hours</th></tr></thead>
+            <thead><tr><th>Staff Member</th><th class="text-center">Clock In</th><th class="text-center">Clock Out</th><th class="text-right">Hours</th><th class="text-center">Open Tables</th><th class="text-center">Status</th></tr></thead>
             <tbody>
               ${day.timesheet.map(t => t.shifts.map(sh => {
                 const inT = new Date(sh.clockIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
                 const outT = sh.clockOut ? new Date(sh.clockOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—';
-                return `<tr><td>${t.name}</td><td class="text-center">${inT}</td><td class="text-center">${outT}</td><td class="text-right">${sh.hours.toFixed(2)}h</td></tr>`;
+                const st = sh.status || 'pending';
+                const badge = st === 'approved' ? '<span class="badge-approved">Approved</span>'
+                  : st === 'declined' ? '<span class="badge-declined">Declined</span>'
+                  : '<span class="badge-pending">Pending</span>';
+                return `<tr><td>${t.name}</td><td class="text-center">${inT}</td><td class="text-center">${outT}</td><td class="text-right">${sh.hours.toFixed(2)}h</td><td class="text-center">${sh.openTables || 0}</td><td class="text-center">${badge}</td></tr>`;
               }).join('')).join('')}
             </tbody>
-            <tfoot><tr><td colspan="3"><strong>Total Hours</strong></td><td class="text-right"><strong>${totalHrs.toFixed(2)}h</strong></td></tr></tfoot>
+            <tfoot><tr><td colspan="3"><strong>Total Hours</strong></td><td class="text-right"><strong>${totalHrs.toFixed(2)}h</strong></td><td></td><td class="text-center text-muted">${approvedHrs.toFixed(2)}h approved</td></tr></tfoot>
           </table>
         </div>`;
     }

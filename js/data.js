@@ -503,13 +503,20 @@ function generateDemoDay() {
   });
 
   const clockRecords = [];
-  Object.keys(staffShifts).forEach(staffId => {
+  Object.keys(staffShifts).forEach((staffId, idx) => {
     const sh = staffShifts[staffId];
     // Clock in 15-30 min before first order
     const clockIn = new Date(new Date(sh.first).getTime() - (15 + Math.floor(Math.random() * 16)) * 60000).toISOString();
     // Clock out 10-25 min after last order closed
     const clockOut = new Date(new Date(sh.last).getTime() + (10 + Math.floor(Math.random() * 16)) * 60000).toISOString();
-    clockRecords.push({ staffId, clockIn, clockOut });
+    clockRecords.push({
+      id: 'tc_demo_' + idx,
+      staffId,
+      clockIn,
+      clockOut,
+      status: 'pending',
+      openTables: 0,
+    });
   });
   Store.saveTimeClock(clockRecords);
 

@@ -978,6 +978,111 @@ input:focus, select:focus {
   padding: .15rem .5rem;
   border-radius: 10px;
 }
+.badge-pending {
+  display: inline-block;
+  background: var(--warning);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: 10px;
+}
+.badge-approved {
+  display: inline-block;
+  background: var(--success);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: 10px;
+}
+.badge-declined {
+  display: inline-block;
+  background: var(--danger);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: 10px;
+}
+.badge-pending-count {
+  display: inline-block;
+  background: var(--warning);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 700;
+  padding: .1rem .45rem;
+  border-radius: 8px;
+  margin-top: .2rem;
+}
+
+/* ── Staff detail modal ───────────────────────────────────── */
+.staff-name-link {
+  cursor: pointer;
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.staff-name-link:hover { text-decoration: underline; }
+.modal-wide { max-width: 680px; }
+.staff-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.staff-detail-stats {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.detail-stat {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .6rem .4rem;
+}
+.detail-stat-val {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.detail-stat-label {
+  display: block;
+  font-size: .7rem;
+  color: var(--text-muted);
+  margin-top: .15rem;
+}
+.shift-time-input {
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text);
+  border-radius: 6px;
+  padding: .25rem .4rem;
+  font-size: .82rem;
+  font-family: inherit;
+  width: 90px;
+  text-align: center;
+}
+.shift-time-input:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.btn-approve-detail {
+  background: var(--success) !important;
+  color: #fff !important;
+  border: none !important;
+}
+.btn-decline-detail {
+  background: var(--danger) !important;
+  color: #fff !important;
+  border: none !important;
+}
 
 /* ── Reports ──────────────────────────────────────────────── */
 .report-controls {
