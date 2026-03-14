@@ -47,9 +47,9 @@ const App = {
     return this.currency() + amount.toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
 
-  /** Format with 4 decimals for unit costs (e.g. €0,0200/g) */
+  /** Format with 2 decimals for unit costs (e.g. €0,02/g) */
   fmtUnit(amount) {
-    return this.currency() + amount.toLocaleString('el-GR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    return this.currency() + amount.toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
 
   vatRate() {
@@ -1382,7 +1382,7 @@ const App = {
             </div>
           </div>
           <div class="pantry-unit-cost-display">
-            <i class="fa-solid fa-calculator"></i> Unit Cost: <strong id="pantry-unit-cost-display">${this.currency()}0.0000</strong>
+            <i class="fa-solid fa-calculator"></i> Unit Cost: <strong id="pantry-unit-cost-display">${this.currency()}0,00</strong>
           </div>
           <div class="modal-actions">
             <button class="btn btn-outline" id="modal-cancel">Cancel</button>
