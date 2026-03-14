@@ -14,6 +14,7 @@ const STORAGE_KEYS = {
   MONTH_LOG:     'hc_month_log',     // monthly auto-reports
   BUSINESS_DATE: 'hc_business_date', // simulated current day
   PANTRY:        'hc_pantry',        // master ingredient inventory
+  TIME_CLOCK:    'hc_time_clock',    // today's clock-in / clock-out records
 };
 
 const Store = {
@@ -56,6 +57,9 @@ const Store = {
     }
     if (!localStorage.getItem(STORAGE_KEYS.PANTRY)) {
       this._set(STORAGE_KEYS.PANTRY, DEFAULT_PANTRY);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.TIME_CLOCK)) {
+      this._set(STORAGE_KEYS.TIME_CLOCK, []);
     }
   },
 
@@ -324,9 +328,69 @@ const Store = {
         createdAt: o.createdAt,
         closedAt: o.closedAt,
       })),
+      timesheet: this.buildTimesheet(this.getTimeClock(), staff),
       generatedAt: new Date().toISOString(),
     };
   },
+
+  // ══════════════════════════════════════════════════════════
+  //  TIME CLOCK — Staff clock-in / clock-out
+  // ══════════════════════════════════════════════════════════
+  getTimeClock()       { return this._get(STORAGE_KEYS.TIME_CLOCK, []); },
+  saveTimeClock(recs)  { this._set(STORAGE_KEYS.TIME_CLOCK, recs); },
+
+  /** Clock a staff member in. Creates a new record {staffId, clockIn, clockOut:null} */
+  clockIn(staffId) {
+    const recs = this.getTimeClock();
+    // Don't allow double clock-in
+    if (recs.find(r => r.staffId === staffId && !r.clockOut)) return null;
+    const rec = { staffId, clockIn: new Date().toISOString(), clockOut: null };
+    recs.push(rec);
+    this.saveTimeClock(recs);
+    return rec;
+  },
+
+  /** Clock a staff member out. Closes the open record. */
+  clockOut(staffId) {
+    const recs = this.getTimeClock();
+    const open = recs.find(r => r.staffId === staffId && !r.clockOut);
+    if (!open) return null;
+    open.clockOut = new Date().toISOString();
+    this.saveTimeClock(recs);
+    return open;
+  },
+
+  /** Check if a staff member is currently clocked in */
+  isClockedIn(staffId) {
+    return !!this.getTimeClock().find(r => r.staffId === staffId && !r.clockOut);
+  },
+
+  /** Get all currently clocked-in staff IDs */
+  getClockedInStaff() {
+    return this.getTimeClock().filter(r => !r.clockOut).map(r => r.staffId);
+  },
+
+  /** Build a timesheet summary from time clock records */
+  buildTimesheet(records, staff) {
+    const staffMap = {};
+    staff.forEach(s => { staffMap[s.id] = s.name; });
+    const byStaff = {};
+    records.forEach(r => {
+      if (!byStaff[r.staffId]) byStaff[r.staffId] = { staffId: r.staffId, name: staffMap[r.staffId] || 'Unknown', shifts: [] };
+      const clockIn = r.clockIn;
+      const clockOut = r.clockOut || new Date().toISOString();
+      const ms = new Date(clockOut) - new Date(clockIn);
+      byStaff[r.staffId].shifts.push({ clockIn, clockOut: r.clockOut, hours: ms / 3600000 });
+    });
+    // Calculate totals
+    return Object.values(byStaff).map(s => {
+      s.totalHours = s.shifts.reduce((sum, sh) => sum + sh.hours, 0);
+      return s;
+    });
+  },
+
+  /** Clear time clock (used at end of day after archiving) */
+  clearTimeClock() { this._set(STORAGE_KEYS.TIME_CLOCK, []); },
 
   // ══════════════════════════════════════════════════════════
   //  WEEK LOG — Weekly summaries

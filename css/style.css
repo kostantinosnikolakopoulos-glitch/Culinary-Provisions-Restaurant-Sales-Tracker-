@@ -871,7 +871,113 @@ input:focus, select:focus {
 }
 .dot-active::before { background: var(--success); }
 .dot-inactive::before { background: var(--danger); }
-.staff-actions { display: flex; gap: .3rem; }
+.staff-actions { display: flex; gap: .3rem; align-items: center; }
+
+/* ── Time Clock ───────────────────────────────────────────── */
+.clock-summary {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--success);
+  border-radius: var(--radius);
+  padding: .8rem 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+.clock-summary-icon {
+  font-size: 1.4rem;
+  color: var(--accent);
+}
+.clock-summary-text {
+  font-size: .9rem;
+  color: var(--text);
+}
+.clock-summary-names {
+  margin-left: auto;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.staff-clocked-in {
+  border-left: 3px solid var(--success);
+}
+.avatar-on-duty {
+  background: var(--success) !important;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, .3); }
+  50%      { box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
+}
+.dot-clocked-in {
+  color: var(--success);
+  font-size: .75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  margin-top: .2rem;
+}
+.dot-clocked-in i { font-size: .5rem; }
+.btn-clock-in {
+  background: var(--success);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: .75rem;
+  padding: .3rem .6rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn-clock-in:hover { filter: brightness(1.1); }
+.btn-clock-out {
+  background: var(--warning);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: .75rem;
+  padding: .3rem .6rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn-clock-out:hover { filter: brightness(1.1); }
+
+.timesheet-section {
+  margin-top: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+}
+.timesheet-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+.timesheet-section h3 i { color: var(--accent); margin-right: .4rem; }
+
+.badge-on-duty {
+  display: inline-block;
+  background: var(--success);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: 10px;
+}
+.badge-completed {
+  display: inline-block;
+  background: var(--text-dim);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: 10px;
+}
 
 /* ── Reports ──────────────────────────────────────────────── */
 .report-controls {

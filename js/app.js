@@ -1430,9 +1430,22 @@ const App = {
   renderStaff() {
     const staff = Store.getStaff();
     const container = document.getElementById('staff-management');
+    const clockedIn = Store.getClockedInStaff();
+    const timeRecs = Store.getTimeClock();
 
+    // ── On-Duty panel ──
+    const onDuty = staff.filter(s => clockedIn.includes(s.id));
     let html = `<div class="staff-header">
       <button class="btn btn-primary" id="btn-add-staff"><i class="fa-solid fa-user-plus"></i> Add Staff Member</button>
+    </div>`;
+
+    // Clocked-in summary bar
+    html += `<div class="clock-summary">
+      <div class="clock-summary-icon"><i class="fa-solid fa-user-clock"></i></div>
+      <div class="clock-summary-text">
+        <strong>${onDuty.length}</strong> staff on duty right now
+      </div>
+      ${onDuty.length > 0 ? `<div class="clock-summary-names">${onDuty.map(s => s.name.split(' ')[0]).join(', ')}</div>` : ''}
     </div>`;
 
     if (staff.length === 0) {
@@ -1443,29 +1456,102 @@ const App = {
       </div>`;
     } else {
       html += '<div class="staff-grid">';
-      html += staff.map(s => `
-        <div class="staff-card ${s.active ? '' : 'staff-inactive'}">
-          <div class="staff-avatar">${s.name.split(' ').map(n => n[0]).join('').toUpperCase()}</div>
+      html += staff.map(s => {
+        const isClocked = clockedIn.includes(s.id);
+        const openRec = timeRecs.find(r => r.staffId === s.id && !r.clockOut);
+        const clockInTime = openRec ? new Date(openRec.clockIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+        <div class="staff-card ${s.active ? '' : 'staff-inactive'} ${isClocked ? 'staff-clocked-in' : ''}">
+          <div class="staff-avatar ${isClocked ? 'avatar-on-duty' : ''}">${s.name.split(' ').map(n => n[0]).join('').toUpperCase()}</div>
           <div class="staff-info">
             <h4>${s.name}</h4>
             <span class="staff-role">${s.role || 'Server'}</span>
-            <span class="status-dot ${s.active ? 'dot-active' : 'dot-inactive'}">${s.active ? 'Active' : 'Inactive'}</span>
+            ${isClocked
+              ? `<span class="status-dot dot-clocked-in"><i class="fa-solid fa-circle-dot"></i> On duty since ${clockInTime}</span>`
+              : `<span class="status-dot ${s.active ? 'dot-active' : 'dot-inactive'}">${s.active ? 'Off duty' : 'Inactive'}</span>`}
           </div>
           <div class="staff-actions">
+            ${s.active ? (isClocked
+              ? `<button class="btn btn-sm btn-clock-out" data-id="${s.id}" title="Clock Out"><i class="fa-solid fa-right-from-bracket"></i> Out</button>`
+              : `<button class="btn btn-sm btn-clock-in" data-id="${s.id}" title="Clock In"><i class="fa-solid fa-right-to-bracket"></i> In</button>`
+            ) : ''}
             <button class="btn-icon btn-edit-staff" data-id="${s.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-icon btn-toggle-staff" data-id="${s.id}" title="${s.active ? 'Deactivate' : 'Activate'}">
               <i class="fa-solid ${s.active ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
             </button>
             <button class="btn-icon btn-delete-staff" data-id="${s.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
       html += '</div>';
+    }
+
+    // ── Today's Timesheet ──
+    if (timeRecs.length > 0) {
+      const timesheet = Store.buildTimesheet(timeRecs, staff);
+      const totalHours = timesheet.reduce((s, t) => s + t.totalHours, 0);
+      html += `
+      <div class="timesheet-section">
+        <h3><i class="fa-solid fa-clipboard-list"></i> Today's Timesheet</h3>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Staff Member</th>
+              <th class="text-center">Clock In</th>
+              <th class="text-center">Clock Out</th>
+              <th class="text-right">Hours</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${timesheet.map(t => t.shifts.map(sh => {
+              const inTime = new Date(sh.clockIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+              const outTime = sh.clockOut ? new Date(sh.clockOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—';
+              const hrs = sh.hours;
+              const isOpen = !sh.clockOut;
+              return `<tr>
+                <td>${t.name}</td>
+                <td class="text-center">${inTime}</td>
+                <td class="text-center">${outTime}</td>
+                <td class="text-right">${hrs.toFixed(2)}h</td>
+                <td class="text-center">${isOpen ? '<span class="badge-on-duty">On Duty</span>' : '<span class="badge-completed">Completed</span>'}</td>
+              </tr>`;
+            }).join('')).join('')}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3"><strong>Total</strong></td>
+              <td class="text-right"><strong>${totalHours.toFixed(2)}h</strong></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>`;
     }
 
     container.innerHTML = html;
 
+    // ── Event bindings ──
     document.getElementById('btn-add-staff')?.addEventListener('click', () => this.showStaffModal());
+
+    // Clock in/out
+    container.querySelectorAll('.btn-clock-in').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.clockIn(btn.dataset.id);
+        const member = staff.find(s => s.id === btn.dataset.id);
+        this.toast(`${member?.name || 'Staff'} clocked in`, 'success');
+        this.renderStaff();
+      });
+    });
+    container.querySelectorAll('.btn-clock-out').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Store.clockOut(btn.dataset.id);
+        const member = staff.find(s => s.id === btn.dataset.id);
+        this.toast(`${member?.name || 'Staff'} clocked out`, 'info');
+        this.renderStaff();
+      });
+    });
+
     container.querySelectorAll('.btn-edit-staff').forEach(btn => {
       btn.addEventListener('click', () => {
         const member = Store.getStaff().find(s => s.id === btn.dataset.id);
@@ -1994,6 +2080,10 @@ const App = {
     const summary = Store.buildDaySummary(today, closed, staff, vatRate);
     Store.archiveDay(summary);
 
+    // Clock out any staff still on the clock
+    Store.getClockedInStaff().forEach(id => Store.clockOut(id));
+    Store.clearTimeClock();
+
     // Remove today's closed orders so the next day starts fresh
     const allOrders = Store.getOrders();
     const remaining = allOrders.filter(o => {
@@ -2183,6 +2273,26 @@ const App = {
                 </tr>
               `).join('')}
             </tbody>
+          </table>
+        </div>`;
+    }
+
+    // Timesheet
+    if (day.timesheet && day.timesheet.length > 0) {
+      const totalHrs = day.timesheet.reduce((s, t) => s + t.totalHours, 0);
+      html += `
+        <div class="report-section">
+          <h4><i class="fa-solid fa-user-clock"></i> Staff Timesheet</h4>
+          <table class="report-table">
+            <thead><tr><th>Staff Member</th><th class="text-center">Clock In</th><th class="text-center">Clock Out</th><th class="text-right">Hours</th></tr></thead>
+            <tbody>
+              ${day.timesheet.map(t => t.shifts.map(sh => {
+                const inT = new Date(sh.clockIn).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                const outT = sh.clockOut ? new Date(sh.clockOut).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—';
+                return `<tr><td>${t.name}</td><td class="text-center">${inT}</td><td class="text-center">${outT}</td><td class="text-right">${sh.hours.toFixed(2)}h</td></tr>`;
+              }).join('')).join('')}
+            </tbody>
+            <tfoot><tr><td colspan="3"><strong>Total Hours</strong></td><td class="text-right"><strong>${totalHrs.toFixed(2)}h</strong></td></tr></tfoot>
           </table>
         </div>`;
     }
