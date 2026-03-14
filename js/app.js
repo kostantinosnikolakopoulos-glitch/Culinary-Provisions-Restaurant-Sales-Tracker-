@@ -2780,5 +2780,4 @@ const App = {
   },
 };
 
-// Boot
-document.addEventListener('DOMContentLoaded', () => App.init());
+// Boot is handled by Auth.init() in auth.js — do not auto-init here

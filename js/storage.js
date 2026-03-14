@@ -27,6 +27,13 @@ const Store = {
   },
   _set(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+    // Sync to Firestore in background
+    if (typeof auth !== 'undefined' && auth.currentUser && FIRESTORE_DOC_MAP[key]) {
+      db.collection('users').doc(auth.currentUser.uid).collection('store')
+        .doc(FIRESTORE_DOC_MAP[key])
+        .set({ value: value })
+        .catch(err => console.error('Firestore sync error:', err));
+    }
   },
 
   // ── Initialise on first run ──────────────────────────────

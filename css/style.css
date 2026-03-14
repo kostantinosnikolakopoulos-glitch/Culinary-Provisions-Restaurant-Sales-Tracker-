@@ -2120,3 +2120,128 @@ input:focus, select:focus {
   .tab-btn:active { transform: scale(.97); }
   .qty-btn:active { transform: scale(.9); }
 }
+
+/* ── Auth Screen ──────────────────────────────────────────── */
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-base);
+  padding: 1.5rem;
+}
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.08);
+}
+.auth-brand {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.auth-brand i {
+  font-size: 2.2rem;
+  color: var(--accent);
+  margin-bottom: .5rem;
+  display: block;
+}
+.auth-brand h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: .25rem;
+}
+.auth-brand p {
+  font-size: .85rem;
+  color: var(--text-muted);
+}
+.auth-form h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1.2rem;
+  text-align: center;
+}
+.auth-field {
+  margin-bottom: 1rem;
+}
+.auth-field label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: .3rem;
+}
+.auth-field input {
+  width: 100%;
+  padding: .65rem .85rem;
+  font-size: .92rem;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-base);
+  color: var(--text);
+  transition: border-color var(--transition);
+}
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(176, 141, 78, .15);
+}
+.auth-error {
+  color: #c0392b;
+  font-size: .82rem;
+  min-height: 1.2rem;
+  margin-bottom: .5rem;
+  text-align: center;
+}
+.auth-btn {
+  width: 100%;
+  padding: .72rem;
+  font-size: .95rem;
+  font-weight: 600;
+  margin-top: .3rem;
+}
+.auth-switch {
+  text-align: center;
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin-top: 1.2rem;
+}
+.auth-switch a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+/* Logout button in sidebar */
+.btn-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .5rem .8rem;
+  font-size: .8rem;
+  font-family: inherit;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  margin-bottom: .6rem;
+}
+.btn-logout:hover {
+  color: #c0392b;
+  border-color: #c0392b;
+  background: rgba(192, 57, 43, .06);
+}
