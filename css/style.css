@@ -1033,8 +1033,8 @@ input:focus, select:focus {
 }
 .staff-detail-stats {
   display: flex;
-  gap: .6rem;
-  flex-wrap: wrap;
+  gap: .4rem;
+  flex-wrap: nowrap;
   margin-bottom: 1rem;
 }
 .detail-stat {
