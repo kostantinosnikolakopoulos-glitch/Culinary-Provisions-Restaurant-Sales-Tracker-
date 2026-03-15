@@ -33,7 +33,7 @@ const Store = {
       if (uid) {
         db.collection('users').doc(uid).collection('store')
           .doc(FIRESTORE_DOC_MAP[key])
-          .set({ value: value })
+          .set({ value: value, lastModified: Date.now() })
           .catch(err => console.error('Firestore sync error:', err));
       }
     }

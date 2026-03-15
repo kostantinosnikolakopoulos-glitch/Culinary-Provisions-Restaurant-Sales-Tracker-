@@ -9,22 +9,35 @@ const Auth = {
 
   init() {
     this.bindEvents();
+    this.initOfflineDetection();
 
     auth.onAuthStateChanged(async (user) => {
-      const authBox  = document.getElementById('auth-container');
-      const appBox   = document.querySelector('.app-layout');
-      const modalBox = document.getElementById('modal');
+      const authBox    = document.getElementById('auth-container');
+      const authCard   = document.getElementById('auth-card');
+      const authLoader = document.getElementById('auth-loading');
+      const appBox     = document.querySelector('.app-layout');
+      const modalBox   = document.getElementById('modal');
 
       if (user) {
         this.currentUser = user;
-        // Check admin role
         await this.checkRole(user.uid);
-        // Pull cloud data into localStorage
+
+        // Check if account is disabled by admin
+        const isDisabled = await this.checkDisabled(user.uid);
+        if (isDisabled) {
+          await auth.signOut();
+          if (authLoader) authLoader.classList.add('hidden');
+          if (authCard) authCard.classList.remove('hidden');
+          authBox.classList.remove('hidden');
+          appBox.classList.add('hidden');
+          const loginErr = document.getElementById('login-error');
+          if (loginErr) loginErr.textContent = 'This account has been disabled by an administrator.';
+          return;
+        }
+
         await this.loadUserData(user.uid);
-        // Boot the app
         authBox.classList.add('hidden');
         appBox.classList.remove('hidden');
-        // Show/hide admin nav
         const adminNav = document.getElementById('nav-admin');
         if (adminNav) {
           if (this.isAdmin) adminNav.classList.remove('hidden');
@@ -34,6 +47,9 @@ const Auth = {
       } else {
         this.currentUser = null;
         this.isAdmin = false;
+        // Show auth screen with card (not spinner)
+        if (authLoader) authLoader.classList.add('hidden');
+        if (authCard) authCard.classList.remove('hidden');
         authBox.classList.remove('hidden');
         appBox.classList.add('hidden');
         modalBox.classList.add('hidden');
@@ -50,16 +66,41 @@ const Auth = {
     }
   },
 
+  async checkDisabled(uid) {
+    try {
+      const doc = await db.collection('users').doc(uid).get();
+      return doc.exists && doc.data().disabled === true;
+    } catch {
+      return false;
+    }
+  },
+
   bindEvents() {
-    // Toggle login ↔ signup
+    const hideAllForms = () => {
+      document.getElementById('login-form')?.classList.add('hidden');
+      document.getElementById('signup-form')?.classList.add('hidden');
+      document.getElementById('forgot-form')?.classList.add('hidden');
+    };
+
+    // Toggle login ↔ signup ↔ forgot
     document.getElementById('auth-toggle-signup')?.addEventListener('click', (e) => {
       e.preventDefault();
-      document.getElementById('login-form').classList.add('hidden');
+      hideAllForms();
       document.getElementById('signup-form').classList.remove('hidden');
     });
     document.getElementById('auth-toggle-login')?.addEventListener('click', (e) => {
       e.preventDefault();
-      document.getElementById('signup-form').classList.add('hidden');
+      hideAllForms();
+      document.getElementById('login-form').classList.remove('hidden');
+    });
+    document.getElementById('auth-toggle-forgot')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllForms();
+      document.getElementById('forgot-form').classList.remove('hidden');
+    });
+    document.getElementById('auth-toggle-login-from-forgot')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      hideAllForms();
       document.getElementById('login-form').classList.remove('hidden');
     });
 
@@ -80,6 +121,31 @@ const Auth = {
         errorEl.textContent = this.friendlyError(err.code);
         btn.disabled = false;
         btn.textContent = 'Sign In';
+      }
+    });
+
+    // Forgot password submit
+    document.getElementById('forgot-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email     = document.getElementById('forgot-email').value.trim();
+      const errorEl   = document.getElementById('forgot-error');
+      const successEl = document.getElementById('forgot-success');
+      const btn       = e.target.querySelector('button[type="submit"]');
+      errorEl.textContent = '';
+      successEl.textContent = '';
+      successEl.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+
+      try {
+        await auth.sendPasswordResetEmail(email);
+        successEl.textContent = 'Reset link sent! Check your email inbox.';
+        successEl.classList.remove('hidden');
+        btn.textContent = 'Link Sent';
+      } catch (err) {
+        errorEl.textContent = this.friendlyError(err.code);
+        btn.disabled = false;
+        btn.textContent = 'Send Reset Link';
       }
     });
 
@@ -129,15 +195,47 @@ const Auth = {
         docToKey[docId] = lsKey;
       });
 
+      // Check if cloud data is newer than local (multi-device conflict detection)
+      const localTimestamp = parseInt(localStorage.getItem('hc_last_sync') || '0', 10);
+      let cloudNewest = 0;
+
       snapshot.forEach(doc => {
+        const data = doc.data();
         const lsKey = docToKey[doc.id];
         if (lsKey) {
-          localStorage.setItem(lsKey, JSON.stringify(doc.data().value));
+          localStorage.setItem(lsKey, JSON.stringify(data.value));
+        }
+        if (data.lastModified && data.lastModified > cloudNewest) {
+          cloudNewest = data.lastModified;
         }
       });
+
+      // Save sync timestamp
+      localStorage.setItem('hc_last_sync', String(Date.now()));
+
+      // Show conflict notification if cloud was updated since last local sync
+      if (localTimestamp > 0 && cloudNewest > localTimestamp) {
+        this.showConflictBanner();
+      }
     } catch (err) {
       console.error('Failed to load user data from Firestore:', err);
     }
+  },
+
+  showConflictBanner() {
+    // Remove existing if present
+    document.getElementById('conflict-banner')?.remove();
+    const banner = document.createElement('div');
+    banner.id = 'conflict-banner';
+    banner.className = 'conflict-banner';
+    banner.innerHTML = `
+      <i class="fa-solid fa-arrows-rotate"></i>
+      <span>Data was updated from another device — your local view has been refreshed with the latest data.</span>
+      <button class="btn btn-sm" onclick="this.parentElement.remove()">
+        <i class="fa-solid fa-xmark"></i> Dismiss
+      </button>`;
+    document.querySelector('.main-content')?.prepend(banner);
+    setTimeout(() => banner.remove(), 10000);
   },
 
   /** Sign out and clear local data */
@@ -210,6 +308,18 @@ const Auth = {
 
   hideImpersonationBanner() {
     document.getElementById('impersonation-banner')?.remove();
+  },
+
+  initOfflineDetection() {
+    const banner = document.getElementById('offline-banner');
+    if (!banner) return;
+    const update = () => {
+      if (navigator.onLine) banner.classList.add('hidden');
+      else banner.classList.remove('hidden');
+    };
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    update();
   }
 };
 

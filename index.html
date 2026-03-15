@@ -40,9 +40,18 @@
 </head>
 <body>
 
+<!-- ═══ OFFLINE BANNER ═══════════════════════════════════ -->
+<div id="offline-banner" class="offline-banner hidden">
+  <i class="fa-solid fa-wifi-slash"></i> You're offline — changes are saved locally and will sync when reconnected.
+</div>
+
 <!-- ═══ AUTH SCREEN ═══════════════════════════════════════ -->
 <div id="auth-container" class="auth-container">
-  <div class="auth-card">
+  <div class="auth-loading" id="auth-loading">
+    <i class="fa-solid fa-utensils fa-2x" style="color:var(--accent);margin-bottom:.8rem"></i>
+    <p style="color:var(--text-muted);font-size:.9rem">Loading…</p>
+  </div>
+  <div class="auth-card hidden" id="auth-card">
     <div class="auth-brand">
       <i class="fa-solid fa-utensils"></i>
       <h1>Culinary Provisions</h1>
@@ -62,7 +71,22 @@
       </div>
       <div class="auth-error" id="login-error"></div>
       <button type="submit" class="btn btn-primary auth-btn">Sign In</button>
+      <p class="auth-switch"><a href="#" id="auth-toggle-forgot">Forgot password?</a></p>
       <p class="auth-switch">Don't have an account? <a href="#" id="auth-toggle-signup">Create one</a></p>
+    </form>
+
+    <!-- Forgot Password Form -->
+    <form id="forgot-form" class="auth-form hidden">
+      <h2>Reset your password</h2>
+      <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1rem;">Enter your email and we'll send you a link to reset your password.</p>
+      <div class="auth-field">
+        <label for="forgot-email">Email</label>
+        <input type="email" id="forgot-email" placeholder="you@restaurant.com" required autocomplete="email" />
+      </div>
+      <div class="auth-error" id="forgot-error"></div>
+      <div class="auth-success hidden" id="forgot-success"></div>
+      <button type="submit" class="btn btn-primary auth-btn">Send Reset Link</button>
+      <p class="auth-switch">Remember your password? <a href="#" id="auth-toggle-login-from-forgot">Sign in</a></p>
     </form>
 
     <!-- Signup Form -->

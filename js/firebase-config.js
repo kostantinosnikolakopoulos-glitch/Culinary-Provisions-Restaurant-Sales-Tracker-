@@ -15,6 +15,9 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
+// Ensure session survives browser restarts (explicit LOCAL persistence)
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+
 // Map localStorage keys → Firestore document IDs
 const FIRESTORE_DOC_MAP = {
   'hc_menu':          'menu',

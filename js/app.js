@@ -2801,6 +2801,10 @@ const App = {
             <span class="kpi-value">${tenants.filter(t => t.role !== 'admin').length}</span>
             <span class="kpi-label">Businesses</span>
           </div>
+          <div class="kpi-card">
+            <span class="kpi-value">${tenants.filter(t => t.disabled).length}</span>
+            <span class="kpi-label">Disabled</span>
+          </div>
         </div>
 
         <div class="admin-tenants-section">
@@ -2821,18 +2825,29 @@ const App = {
                 const roleBadge = t.role === 'admin'
                   ? '<span class="badge-approved">Admin</span>'
                   : '<span class="badge-pending">User</span>';
-                return `<tr>
-                  <td><strong>${t.businessName || '—'}</strong></td>
+                const isSelf = t.uid === Auth.currentUser?.uid;
+                const disabledBadge = t.disabled ? ' <span class="badge-declined" style="font-size:.7rem;margin-left:.3rem">Disabled</span>' : '';
+                return `<tr${t.disabled ? ' style="opacity:.55"' : ''}>
+                  <td><strong>${t.businessName || '—'}</strong>${disabledBadge}</td>
                   <td>${t.email || '—'}</td>
                   <td class="text-center">${roleBadge}</td>
                   <td class="text-center">${date}</td>
-                  <td class="text-center">
+                  <td class="text-center admin-actions-cell">
                     <button class="btn btn-sm btn-primary btn-admin-enter" data-uid="${t.uid}" data-name="${t.businessName || t.email}">
                       <i class="fa-solid fa-right-to-bracket"></i> Enter
                     </button>
-                    <button class="btn btn-sm btn-outline btn-admin-view" data-uid="${t.uid}" data-name="${t.businessName || t.email}" style="margin-left:.3rem">
+                    <button class="btn btn-sm btn-outline btn-admin-view" data-uid="${t.uid}" data-name="${t.businessName || t.email}">
                       <i class="fa-solid fa-eye"></i> Data
                     </button>
+                    <button class="btn btn-sm btn-outline btn-admin-edit" data-uid="${t.uid}" data-name="${t.businessName || ''}" data-email="${t.email || ''}" data-role="${t.role || 'user'}">
+                      <i class="fa-solid fa-pen"></i> Edit
+                    </button>
+                    ${!isSelf ? `<button class="btn btn-sm btn-outline btn-admin-toggle" data-uid="${t.uid}" data-disabled="${t.disabled ? 'true' : 'false'}" style="color:${t.disabled ? '#27ae60' : '#e67e22'}">
+                      <i class="fa-solid fa-${t.disabled ? 'toggle-on' : 'toggle-off'}"></i> ${t.disabled ? 'Enable' : 'Disable'}
+                    </button>
+                    <button class="btn btn-sm btn-outline btn-admin-delete" data-uid="${t.uid}" data-name="${t.businessName || t.email}" style="color:#c0392b">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>` : ''}
                   </td>
                 </tr>`;
               }).join('')}
@@ -2852,10 +2867,104 @@ const App = {
         btn.addEventListener('click', () => this.showTenantData(btn.dataset.uid, btn.dataset.name));
       });
 
+      // Bind "Edit" buttons
+      container.querySelectorAll('.btn-admin-edit').forEach(btn => {
+        btn.addEventListener('click', () => this.showEditTenantModal(btn.dataset.uid, btn.dataset.name, btn.dataset.email, btn.dataset.role));
+      });
+
+      // Bind "Disable/Enable" buttons
+      container.querySelectorAll('.btn-admin-toggle').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const uid = btn.dataset.uid;
+          const nowDisabled = btn.dataset.disabled === 'true';
+          const newState = !nowDisabled;
+          await db.collection('users').doc(uid).update({ disabled: newState });
+          this.renderAdmin();
+        });
+      });
+
+      // Bind "Delete" buttons
+      container.querySelectorAll('.btn-admin-delete').forEach(btn => {
+        btn.addEventListener('click', () => this.confirmDeleteTenant(btn.dataset.uid, btn.dataset.name));
+      });
+
     } catch (err) {
       console.error('Admin panel error:', err);
       container.innerHTML = '<p class="text-muted">Failed to load tenants. Check console for details.</p>';
     }
+  },
+
+  showEditTenantModal(uid, name, email, role) {
+    const modal = document.getElementById('modal');
+    modal.innerHTML = `
+      <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box">
+          <h3><i class="fa-solid fa-pen"></i> Edit Tenant</h3>
+          <div class="auth-field"><label>Business Name</label><input type="text" id="edit-tenant-name" value="${name}"></div>
+          <div class="auth-field"><label>Email</label><input type="email" id="edit-tenant-email" value="${email}"></div>
+          <div class="auth-field"><label>Role</label>
+            <select id="edit-tenant-role" style="width:100%;padding:.65rem .85rem;font-size:.92rem;font-family:inherit;border:1px solid var(--border);border-radius:8px;background:var(--bg-base);color:var(--text);">
+              <option value="user"${role !== 'admin' ? ' selected' : ''}>User</option>
+              <option value="admin"${role === 'admin' ? ' selected' : ''}>Admin</option>
+            </select>
+          </div>
+          <div class="auth-error" id="edit-tenant-error"></div>
+          <div class="modal-actions" style="margin-top:1rem">
+            <button class="btn btn-primary" id="edit-tenant-save"><i class="fa-solid fa-check"></i> Save</button>
+            <button class="btn btn-outline" id="edit-tenant-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    modal.classList.remove('hidden');
+    document.getElementById('edit-tenant-cancel').onclick = () => modal.classList.add('hidden');
+    document.getElementById('modal-overlay').onclick = (e) => { if (e.target.id === 'modal-overlay') modal.classList.add('hidden'); };
+    document.getElementById('edit-tenant-save').onclick = async () => {
+      const newName  = document.getElementById('edit-tenant-name').value.trim();
+      const newEmail = document.getElementById('edit-tenant-email').value.trim();
+      const newRole  = document.getElementById('edit-tenant-role').value;
+      const errEl    = document.getElementById('edit-tenant-error');
+      if (!newName || !newEmail) { errEl.textContent = 'All fields are required.'; return; }
+      try {
+        await db.collection('users').doc(uid).update({ businessName: newName, email: newEmail, role: newRole });
+        modal.classList.add('hidden');
+        this.renderAdmin();
+      } catch (err) {
+        errEl.textContent = 'Failed to update: ' + err.message;
+      }
+    };
+  },
+
+  async confirmDeleteTenant(uid, name) {
+    const modal = document.getElementById('modal');
+    modal.innerHTML = `
+      <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box">
+          <h3 style="color:#c0392b"><i class="fa-solid fa-triangle-exclamation"></i> Delete Account</h3>
+          <p style="margin:1rem 0">Are you sure you want to delete <strong>${name}</strong>?<br>This will remove their profile and all stored data. This cannot be undone.</p>
+          <div class="auth-error" id="delete-tenant-error"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="delete-tenant-confirm" style="background:#c0392b"><i class="fa-solid fa-trash"></i> Delete</button>
+            <button class="btn btn-outline" id="delete-tenant-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    modal.classList.remove('hidden');
+    document.getElementById('delete-tenant-cancel').onclick = () => modal.classList.add('hidden');
+    document.getElementById('modal-overlay').onclick = (e) => { if (e.target.id === 'modal-overlay') modal.classList.add('hidden'); };
+    document.getElementById('delete-tenant-confirm').onclick = async () => {
+      try {
+        // Delete store subcollection docs
+        const storeDocs = await db.collection('users').doc(uid).collection('store').get();
+        const batch = db.batch();
+        storeDocs.forEach(doc => batch.delete(doc.ref));
+        batch.delete(db.collection('users').doc(uid));
+        await batch.commit();
+        modal.classList.add('hidden');
+        this.renderAdmin();
+      } catch (err) {
+        document.getElementById('delete-tenant-error').textContent = 'Failed to delete: ' + err.message;
+      }
+    };
   },
 
   async showTenantData(uid, name) {

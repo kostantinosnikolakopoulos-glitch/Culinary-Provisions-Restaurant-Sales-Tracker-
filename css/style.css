@@ -2249,7 +2249,7 @@ input:focus, select:focus {
 /* ── Admin Panel ──────────────────────────────────────────── */
 .admin-stats-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -2299,4 +2299,80 @@ input:focus, select:focus {
 }
 .impersonation-banner .btn:hover {
   background: rgba(255,255,255,.35);
+}
+
+/* ── Auth Loading Spinner ─────────────────────────────────── */
+.auth-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  animation: authPulse 1.4s ease-in-out infinite;
+}
+@keyframes authPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
+/* ── Auth Success Message ─────────────────────────────────── */
+.auth-success {
+  color: #27ae60;
+  font-size: .82rem;
+  text-align: center;
+  margin-bottom: .5rem;
+  font-weight: 500;
+}
+
+/* ── Offline Banner ───────────────────────────────────────── */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .55rem 1.2rem;
+  background: #e67e22;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 500;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  text-align: center;
+  justify-content: center;
+}
+
+/* ── Multi-Device Conflict Banner ─────────────────────────── */
+.conflict-banner {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .6rem 1.2rem;
+  background: #2980b9;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.conflict-banner .btn {
+  margin-left: auto;
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.4);
+  font-size: .78rem;
+}
+.conflict-banner .btn:hover {
+  background: rgba(255,255,255,.35);
+}
+
+/* ── Admin Action Buttons ─────────────────────────────────── */
+.admin-actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+  justify-content: center;
 }
